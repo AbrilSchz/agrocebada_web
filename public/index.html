@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AgroCebada · Mapa de polígonos</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="nav">
+  <strong class="brand">🌾 AgroCebada</strong>
+  <nav>
+    <a href="#mapa" class="active" data-v="mapa">Mapa</a>
+    <a href="#tabla" data-v="tabla">Parcelas</a>
+    <a href="/api/capas" target="_blank">API</a>
+  </nav>
+  <input id="buscar" placeholder="Buscar ID_POLIGONO…" list="ids">
+  <datalist id="ids"></datalist>
+</header>
+<main>
+  <section id="mapa" class="vista">
+    <aside class="panel">
+      <h4>Mapa base</h4>
+      <label><input type="radio" name="base" value="calles" checked> Calles</label>
+      <label><input type="radio" name="base" value="sat"> Satelital</label>
+      <h4>Capa temática</h4>
+      <select id="capa"><option value="">— Solo contornos —</option></select>
+      <select id="fecha" hidden></select>
+      <div id="leyenda"></div>
+    </aside>
+    <div id="map"></div>
+  </section>
+  <section id="tabla" class="vista" hidden><div class="tabla-wrap"><table id="t"></table></div></section>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
