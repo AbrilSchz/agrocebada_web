@@ -21,4 +21,15 @@ Variables: PORT, DB_PATH, API_KEY.
 SQLite vive en un archivo: en Render/Railway/Fly monta un volumen persistente y apunta DB_PATH ahí
 (el Dockerfile usa /data). Sin volumen, los POST /api/datos se pierden en cada redeploy.
     docker build -t agrocebada . && docker run -p 3000:3000 -v agc:/data agrocebada
-# agrocebada_web
+
+## Cargar datos nuevos (CSV)
+    node scripts/importar_csv.js datos.csv --grupo NIR --fecha 2026-02-01
+    node scripts/importar_csv.js datos.csv --grupo Procesamiento --fecha-col fecha
+El CSV debe tener la columna ID_POLIGONO; cada otra columna numérica se vuelve una capa (usa nombres simples, sin espacios).
+Reimportar el mismo archivo reemplaza los valores, no los duplica.
+Respalda siempre `db/parcelas_master.sqlite` antes de importar.
+
+## Deploy de solo lectura (recomendado)
+1. En tu laptop: importa CSVs, apaga el servidor y corre `npm run preparar`.
+2. Sube el proyecto a GitHub (incluyendo db/parcelas_master.sqlite).
+3. Render → New Web Service → Docker. El Dockerfile ya activa READ_ONLY=1.

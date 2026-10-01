@@ -7,11 +7,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'db', 'parcelas_master.sqlite');
 const PORT = process.env.PORT || 3000;
 
-const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
+// READ_ONLY=1 (recomendado en producción): la base se abre solo para lectura y se desactiva la carga por API.
+const READ_ONLY = process.env.READ_ONLY === '1';
+const db = new Database(DB_PATH, { readonly: READ_ONLY, fileMustExist: READ_ONLY });
 // Tablas aditivas. Sin FOREIGN KEY a propósito: ID_POLIGONO es la clave central
 // y puede tener datos aunque no exista geometría en `parcelas`.
-db.exec(`
+if (!READ_ONLY) db.exec(`
 CREATE TABLE IF NOT EXISTS capas (
   id TEXT PRIMARY KEY, nombre TEXT NOT NULL, grupo TEXT NOT NULL DEFAULT 'Procesamiento',
   descripcion TEXT, unidad TEXT, min REAL, max REAL
@@ -71,6 +72,7 @@ app.get('/api/capas/:id/valores', (q, r) => {
 // Ingesta: POST /api/datos  [{ID_POLIGONO, capa_id, fecha?, variable?, valor}]
 // Protegida con API_KEY si está definida en el entorno.
 app.post('/api/datos', (q, r) => {
+  if (READ_ONLY) return r.status(403).json({ error: 'Servidor en modo solo lectura' });
   if (process.env.API_KEY && q.get('x-api-key') !== process.env.API_KEY) return r.status(401).json({ error: 'No autorizado' });
   if (!Array.isArray(q.body)) return r.status(400).json({ error: 'Se esperaba un arreglo' });
   const ins = db.prepare('INSERT OR REPLACE INTO datos VALUES (?,?,?,?,?)');
