@@ -1,5 +1,18 @@
 const C = window.CONFIG, $ = s => document.querySelector(s);
-const map = L.map('map').setView(C.centro, C.zoom);
+const limites = C.limites ? L.latLngBounds(C.limites) : null;
+const map = L.map('map', {
+  maxBounds: limites || undefined,
+  maxBoundsViscosity: 1.0
+}).setView(C.centro, C.zoom);
+// Impide alejarse hasta mostrar el mundo; recalcula al cambiar el tamaño.
+// Al encajar el rectángulo pueden verse márgenes por la proporción de pantalla.
+function ajustarLimites() {
+  if (!limites || !map.getSize().x || !map.getSize().y) return;
+  map.setMinZoom(map.getBoundsZoom(limites));
+  map.panInsideBounds(limites, { animate: false });
+}
+map.on('resize', ajustarLimites);
+ajustarLimites();
 let base = L.tileLayer(C.bases.calles.url, { attribution: C.bases.calles.attribution, maxZoom: 19 }).addTo(map);
 document.querySelectorAll('[name=base]').forEach(r => r.onchange = () => {
   map.removeLayer(base); const b = C.bases[r.value];
