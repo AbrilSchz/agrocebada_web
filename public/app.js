@@ -4,11 +4,13 @@ const map = L.map('map', {
   maxBounds: limites || undefined,
   maxBoundsViscosity: 1.0
 }).setView(C.centro, C.zoom);
-// Impide alejarse hasta mostrar el mundo; recalcula al cambiar el tamaño.
-// Al encajar el rectángulo pueden verse márgenes por la proporción de pantalla.
+// La vista completa debe quedar dentro de la región, sin márgenes exteriores.
+// Recalcula el zoom mínimo también al volver de la tabla o cambiar de tamaño.
 function ajustarLimites() {
   if (!limites || !map.getSize().x || !map.getSize().y) return;
-  map.setMinZoom(map.getBoundsZoom(limites));
+  // Libera el mínimo anterior para poder recalcular al reducir la ventana.
+  map.setMinZoom(0);
+  map.setMinZoom(map.getBoundsZoom(limites, true));
   map.panInsideBounds(limites, { animate: false });
 }
 map.on('resize', ajustarLimites);
