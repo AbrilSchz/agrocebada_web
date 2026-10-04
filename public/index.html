@@ -18,20 +18,31 @@
   <datalist id="ids"></datalist>
 </header>
 <main>
-  <section id="mapa" class="vista">
-    <aside class="panel">
-      <h4>Mapa base</h4>
-      <label><input type="radio" name="base" value="calles" checked> Calles</label>
-      <label><input type="radio" name="base" value="sat"> Satelital</label>
-      <h4>Capa temática</h4>
-      <select id="capa"><option value="">— Solo contornos —</option></select>
-      <select id="fecha" hidden></select>
-      <div id="leyenda"></div>
-    </aside>
-    <div id="map"></div>
-  </section>
+  <div id="container">
+    <section id="mapa"></section>
+    <section id="dashboard">
+      <div id="dashboard-content">
+        <div id="dashboard-loading" class="loading">Cargando parcela…</div>
+        <div id="dashboard-error" class="error"></div>
+        <div id="dashboard-instructions" class="instructions">
+          Seleccione una parcela en el mapa, búsqueda o tabla para ver su dashboard.
+        </div>
+        <div id="dashboard-data"></div>
+      </div>
+    </section>
+  </div>
   <section id="tabla" class="vista" hidden><div class="tabla-wrap"><table id="t"></table></div></section>
 </main>
+<button id="layers-button">Capas</button>
+<div id="layers-panel">
+  <h4>Mapa base</h4>
+  <label><input type="radio" name="base" value="calles" checked> Calles</label>
+  <label><input type="radio" name="base" value="sat"> Satelital</label>
+  <h4>Capa temática</h4>
+  <select id="capa"><option value="">— Solo contornos —</option></select>
+  <select id="fecha" hidden></select>
+  <div id="leyenda"></div>
+</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
