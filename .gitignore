@@ -2,3 +2,13 @@ node_modules
 *.sqlite-wal
 *.sqlite-shm
 .aider*
+
+# Configuración y artefactos locales de AgroCebada
+.env
+.env.*
+!.env.example
+node_modules/
+db/parcelas_demo.sqlite
+db/parcelas_demo.sqlite.*
+db/*.tmp-*
+

@@ -2,47 +2,81 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AgroCebada · Mapa de polígonos</title>
+<title>AgroCebada · Dashboard de parcelas</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="nav">
   <strong class="brand">🌾 AgroCebada</strong>
-  <nav>
+  <nav aria-label="Vistas">
     <a href="#mapa" class="active" data-v="mapa">Mapa</a>
     <a href="#tabla" data-v="tabla">Parcelas</a>
-    <a href="/api/capas" target="_blank">API</a>
+    <a href="#documentacion" data-v="documentacion">Documentación</a>
+    <a href="/api/capas" target="_blank" rel="noopener">API</a>
   </nav>
+  <label class="sr-only" for="buscar">Buscar parcela por ID</label>
   <input id="buscar" placeholder="Buscar ID_POLIGONO…" list="ids">
   <datalist id="ids"></datalist>
 </header>
 <main>
-  <div id="container">
-    <section id="mapa"></section>
-    <section id="dashboard">
-      <div id="dashboard-content">
-        <div id="dashboard-loading" class="loading">Cargando parcela…</div>
-        <div id="dashboard-error" class="error"></div>
-        <div id="dashboard-instructions" class="instructions">
-          Seleccione una parcela en el mapa, búsqueda o tabla para ver su dashboard.
+  <div id="container" class="vista">
+    <section id="mapa" aria-label="Mapa de parcelas">
+      <div id="map"></div>
+      <button id="layers-button" type="button" aria-expanded="false" aria-controls="layers-panel">Capas</button>
+      <div id="layers-panel" hidden>
+        <h4>Mapa base</h4>
+        <label><input type="radio" name="base" value="calles" checked> Calles</label>
+        <label><input type="radio" name="base" value="sat"> Satelital</label>
+        <h4>Capa temática</h4>
+        <label class="sr-only" for="capa">Capa temática</label>
+        <select id="capa"><option value="">— Solo contornos —</option></select>
+        <label class="sr-only" for="fecha">Fecha de la capa</label>
+        <select id="fecha" hidden></select>
+        <label for="opacidad">Opacidad</label>
+        <input id="opacidad" type="range" min="0" max="1" step="0.05" value="0.75">
+        <label><input id="contornos" type="checkbox" checked> Mostrar contornos</label>
+        <div id="leyenda"></div>
+        <p id="layers-error" class="error" hidden></p>
+      </div>
+      <section id="timeline-panel" aria-label="Evolución temporal" hidden>
+        <div class="timeline-heading"><div><span class="eyebrow">EVOLUCIÓN TEMPORAL</span><strong id="timeline-title">Campañas disponibles</strong></div><button id="timeline-close" type="button" aria-label="Cerrar modo temporal">×</button></div>
+        <div class="timeline-settings">
+          <label for="timeline-model">Modelo<select id="timeline-model"></select></label>
+          <label for="timeline-metric">Colorear por<select id="timeline-metric"><option value="prediccion">Predicción</option><option value="observado">Observado</option><option value="error_firmado_t_ha">Error firmado</option><option value="error_absoluto_t_ha">Error absoluto</option></select></label>
         </div>
-        <div id="dashboard-data"></div>
+        <div id="timeline-years" class="timeline-years" role="group" aria-label="Seleccionar campaña"></div>
+        <label class="sr-only" for="timeline-range">Campaña</label><input id="timeline-range" type="range" min="0" max="0" value="0" step="1">
+        <div class="timeline-bottom"><button id="timeline-play" type="button" aria-pressed="false">▶ Reproducir</button><span id="timeline-caption" role="status"></span></div>
+        <div id="timeline-legend"></div><p id="timeline-error" class="error" hidden></p>
+      </section>
+      <button id="timeline-button" type="button" aria-expanded="false" aria-controls="timeline-panel">◷ Evolución temporal</button>
+      <p id="map-status" role="status">Cargando parcelas…</p>
+    </section>
+    <section id="dashboard" aria-label="Dashboard de la parcela" aria-live="polite">
+      <div id="dashboard-content">
+        <div class="ai-hero">
+          <span class="eyebrow">INTELIGENCIA PARA TU PARCELA</span>
+          <button id="info-button" class="info-button" type="button" disabled aria-describedby="ai-caption">
+            <span class="ai-mark" aria-hidden="true">✦</span><span class="ai-button-copy"><strong>AI ANALYTICS</strong><span>Explora lo que cuentan tus datos</span></span><span class="ai-arrow" aria-hidden="true">↗</span>
+          </button>
+          <p id="ai-caption">Selecciona una parcela para activar el análisis.</p>
+          <div id="info-loading" class="loading" role="status" hidden><span class="loading-orbit" aria-hidden="true"></span>Generando análisis…</div>
+          <div id="info-error" class="error" role="alert" hidden></div>
+          <div id="info-response" hidden></div>
+        </div>
+        <div id="dashboard-loading" class="loading" hidden></div>
+        <div id="dashboard-error" class="error" hidden></div>
+        <div id="dashboard-instructions" class="instructions">Seleccione una parcela en el mapa, búsqueda o tabla para ver su dashboard.</div>
+        <div id="dashboard-data" hidden></div>
       </div>
     </section>
   </div>
-  <section id="tabla" class="vista" hidden><div class="tabla-wrap"><table id="t"></table></div></section>
+  <section id="tabla" class="vista" hidden aria-label="Listado de parcelas">
+    <div class="tabla-wrap"><table id="t"><caption>Parcelas disponibles</caption></table></div>
+  </section>
+  <section id="documentacion" class="vista" hidden aria-label="Documentación"></section>
 </main>
-<button id="layers-button">Capas</button>
-<div id="layers-panel">
-  <h4>Mapa base</h4>
-  <label><input type="radio" name="base" value="calles" checked> Calles</label>
-  <label><input type="radio" name="base" value="sat"> Satelital</label>
-  <h4>Capa temática</h4>
-  <select id="capa"><option value="">— Solo contornos —</option></select>
-  <select id="fecha" hidden></select>
-  <div id="leyenda"></div>
-</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>

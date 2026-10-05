@@ -11,7 +11,11 @@
     "dev": "node --watch server.js",
     "seed:demo": "node scripts/seed_demo.js",
     "importar": "node scripts/importar_csv.js",
-    "preparar": "node scripts/preparar_deploy.js"
+    "preparar": "node scripts/preparar_deploy.js",
+    "demo:preparar": "node scripts/prepare_demo_db.js",
+    "demo:completar": "node scripts/prepare_demo_db.js --completar",
+    "dev:local": "node --env-file=.env --watch server.js",
+    "start:local": "node --env-file=.env server.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.5.0",

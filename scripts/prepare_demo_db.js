@@ -1,261 +1,131 @@
-// Script para preparar la base de datos de demostración
-// Lee la base de referencia sin modificarla y crea una base de demostración separada
-// con los mismos 197 IDs y geometrías, pero con resultados precalculados.
-
+// Preparación fuera del servidor: los resultados y las métricas quedan almacenados.
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-import { existsSync, writeFileSync, unlinkSync, renameSync } from 'node:fs';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const REFERENCE_DB_PATH = join(__dirname, '..', 'db', 'parcelas_master.sqlite');
-const DEMO_DB_PATH = join(__dirname, '..', 'db', 'parcelas_demo.sqlite');
-const TEMP_DB_PATH = DEMO_DB_PATH + '.tmp.' + Date.now() + '.' + Math.random().toString(36).substring(2, 15);
-
-// Negarse a sobrescribir un archivo existente
-if (existsSync(DEMO_DB_PATH)) {
-  console.error(`Error: El archivo de demostración ya existe en ${DEMO_DB_PATH}`);
-  console.error('Elimínelo primero si desea regenerarlo.');
-  process.exit(1);
+import { dirname, join, resolve } from 'node:path';
+import { existsSync, linkSync, unlinkSync, renameSync, statSync } from 'node:fs';
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const referencePath = join(root, 'db', 'parcelas_master.sqlite');
+const outputPath = resolve(process.env.DEMO_DB_PATH || join(root, 'db', 'parcelas_demo.sqlite'));
+const complete = process.argv.includes('--completar');
+const temporaryPath = `${outputPath}.tmp-${process.pid}-${Date.now()}`;
+let source, target;
+// Reutilizar consultas mantiene sus objetos vivos hasta cerrar cada conexión.
+function openDatabase(filename, options) {
+  const connection = new Database(filename, options);
+  const prepare = connection.prepare.bind(connection), statements = new Map();
+  connection.prepare = sql => {
+    if (!statements.has(sql)) statements.set(sql, prepare(sql));
+    return statements.get(sql);
+  };
+  return connection;
 }
-
-// Abrir base de referencia (solo lectura)
-const refDb = new Database(REFERENCE_DB_PATH, { readonly: true });
-
-// Crear base de demostración (lectura-escritura) en archivo temporal
-const demoDb = new Database(TEMP_DB_PATH);
-
-try {
-  demoDb.transaction(() => {
-    // Crear tabla parcelas (misma estructura que la referencia)
-    demoDb.exec(`
-      CREATE TABLE parcelas (
-        ID_POLIGONO TEXT PRIMARY KEY,
-        geometria_geojson TEXT NOT NULL,
-        longitud_ref REAL NOT NULL,
-        latitud_ref REAL NOT NULL
-      );
-    `);
-
-    // Crear tabla capas (misma estructura que en server.js)
-    demoDb.exec(`
-      CREATE TABLE capas (
-        id TEXT PRIMARY KEY, nombre TEXT NOT NULL, grupo TEXT NOT NULL DEFAULT 'Procesamiento',
-        descripcion TEXT, unidad TEXT, min REAL, max REAL
-      );
-    `);
-
-    // Crear tabla datos (misma estructura que en server.js)
-    demoDb.exec(`
-      CREATE TABLE datos (
-        ID_POLIGONO TEXT NOT NULL, capa_id TEXT NOT NULL,
-        fecha TEXT NOT NULL DEFAULT '', variable TEXT NOT NULL DEFAULT '', valor REAL,
-        PRIMARY KEY (ID_POLIGONO, capa_id, fecha, variable)
-      );
-    `);
-
-    // Crear tablas de resultados (como espera server.js)
-    demoDb.exec(`
-      CREATE TABLE parcelas_resultados (
-        ID_POLIGONO TEXT NOT NULL,
-        campaña TEXT NOT NULL,
-        versión_modelo TEXT NOT NULL,
-        prediccion REAL NOT NULL,
-        observado REAL,
-        PRIMARY KEY (ID_POLIGONO, campaña, versión_modelo)
-      );
-    `);
-
-    demoDb.exec(`
-      CREATE TABLE parcelas_contribuciones (
-        ID_POLIGONO TEXT NOT NULL,
-        campaña TEXT NOT NULL,
-        versión_modelo TEXT NOT NULL,
-        variable TEXT NOT NULL,
-        valor REAL NOT NULL,
-        unidad TEXT NOT NULL,
-        aporte_t_ha REAL NOT NULL,
-        PRIMARY KEY (ID_POLIGONO, campaña, versión_modelo, variable)
-      );
-    `);
-
-    // Copiar datos de parcelas de referencia a demostración
-    const parcelas = refDb.prepare('SELECT ID_POLIGONO, geometria_geojson, longitud_ref, latitud_ref FROM parcelas').all();
-    const insertParcelas = demoDb.prepare(`
-      INSERT INTO parcelas (ID_POLIGONO, geometria_geojson, longitud_ref, latitud_ref)
-      VALUES (@ID_POLIGONO, @geometria_geojson, @longitud_ref, @latitud_ref)
-    `);
-
-    for (const p of parcelas) {
-      insertParcelas.run(p);
+function random(id, min, max, salt = '') {
+  let hash = 0;
+  for (const char of id + salt) hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+  return min + (Math.abs(hash) % 10000) / 10000 * (max - min);
+}
+function addResultColumns(db) {
+  const names = new Set(db.prepare('PRAGMA table_info(parcelas_resultados)').all().map(x => x.name));
+  for (const [name, type] of Object.entries({
+    valor_base_t_ha:'REAL', error_firmado_t_ha:'REAL', error_absoluto_t_ha:'REAL',
+    error_relativo_pct:'REAL', mae_historial_t_ha:'REAL', unidad_rendimiento:"TEXT NOT NULL DEFAULT 't/ha'"
+  })) if (!names.has(name)) db.exec(`ALTER TABLE parcelas_resultados ADD COLUMN ${name} ${type}`);
+}
+function fillResults(db, ids) {
+  const insertResult = db.prepare('INSERT INTO parcelas_resultados (ID_POLIGONO, campaña, versión_modelo, prediccion, observado) VALUES (?,?,?,?,?)');
+  const insertContribution = db.prepare('INSERT INTO parcelas_contribuciones (ID_POLIGONO, campaña, versión_modelo, variable, valor, unidad, aporte_t_ha) VALUES (?,?,?,?,?,?,?)');
+  const variables = [
+    ['NDVI','adimensional',.3,.8], ['Precipitación acumulada','mm',200,600],
+    ['Temperatura mínima media','°C',2,12], ['Pendiente','grados',0,15]
+  ];
+  for (const {ID_POLIGONO:id} of ids) {
+    for (const year of ['2021','2022','2023']) {
+      const prediction = random(id + year, 2, 6);
+      const observed = random(id + year + '_obs', 0, 1) > (year === '2023' ? .2 : .1) ? Math.max(.1, prediction + random(id + year + '_err', -.8, .8)) : null;
+      insertResult.run(id, year, 'demo-v1', prediction, observed);
     }
-
-    // Copiar capas de referencia
-    const capas = refDb.prepare('SELECT * FROM capas').all();
-    const insertCapas = demoDb.prepare(`
-      INSERT INTO capas (id, nombre, grupo, descripcion, unidad, min, max)
-      VALUES (@id, @nombre, @grupo, @descripcion, @unidad, @min, @max)
-    `);
-    for (const c of capas) {
-      insertCapas.run(c);
+    for (const [name, unit, min, max] of variables) {
+      const value = random(id + '_' + name, min, max);
+      const contribution = random(id + '_' + name + '_aporte', -.5, .5) * value / 100;
+      insertContribution.run(id, '2023', 'demo-v1', name, value, unit, contribution);
     }
-
-    // Copiar datos de referencia
-    const datos = refDb.prepare('SELECT * FROM datos').all();
-    const insertDatos = demoDb.prepare(`
-      INSERT INTO datos (ID_POLIGONO, capa_id, fecha, variable, valor)
-      VALUES (@ID_POLIGONO, @capa_id, @fecha, @variable, @valor)
-    `);
-    for (const d of datos) {
-      insertDatos.run(d);
-    }
-
-    // Función semideterminista basada en cadena
-    function stringHash(str) {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convertir a entero de 32 bits
-      }
-      return Math.abs(hash);
-    }
-
-    // Generar número determinista en [0, 1) a partir de cadena y sal
-    function deterministicFloat(str, salt = '') {
-      const hash = stringHash(str + salt);
-      // Devolver flotante en [0, 1)
-      return (hash % 10000) / 10000;
-    }
-
-    // Generar número determinista en rango [min, max]
-    function deterministicRange(str, min, max, salt = '') {
-      return min + (deterministicFloat(str, salt) * (max - min));
-    }
-
-    // Campañas - usaremos tres años
-    const campaigns = ['2021', '2022', '2023'];
-    const latestCampaign = '2023';
-    const modelVersion = 'demo-v1';
-
-    // Para cada parcela, generar datos
-    for (const parcel of parcelas) {
-      const id = parcel.ID_POLIGONO;
-      
-      // Generar datos para cada campaña
-      const campaignData = [];
-      for (const campaña of campaigns) {
-        // Predicción base varía por parcela y campaña
-        const prediccionBase = deterministicRange(id + campaña, 2.0, 6.0);
-        
-        // Para observado: 
-        // - Para 2023: 20% de probabilidad de nulo (observación faltante)
-        // - Para otras campañas: normalmente presente pero a veces nulo (10% de probabilidad)
-        let observado = null;
-        const nullChance = (campaña === latestCampaign) ? 0.2 : 0.1;
-        if (deterministicFloat(id + campaña + '_obs') > nullChance) {
-          // Observado es predicción más algún error
-          const error = deterministicRange(id + campaña + '_err', -0.8, 0.8);
-          observado = prediccionBase + error;
-          // Asegurar no negativo (el rendimiento no puede ser negativo)
-          observado = Math.max(0.1, observado);
-        }
-        
-        campaignData.push({ campaña, prediccion: prediccionBase, observado });
-      }
-
-      // Insertar resultados de campaña
-      const insertResult = demoDb.prepare(`
-        INSERT INTO parcelas_resultados 
-        (ID_POLIGONO, campaña, versión_modelo, prediccion, observado)
-        VALUES (@ID_POLIGONO, @campaña, @versión_modelo, @prediccion, @observado)
-      `);
-
-      for (const data of campaignData) {
-        insertResult.run({
-          ID_POLIGONO: id,
-          campaña: data.campaña,
-          versión_modelo: modelVersion,
-          prediccion: data.prediccion,
-          observado: data.observado
-        });
-      }
-
-      // Generar contribuciones para la campaña más reciente
-      // Crearemos 4 contribuciones que sumen a un valor razonable
-      const contributionVariables = [
-        { variable: 'NDVI', unidad: 'adimensional', valorRange: [0.3, 0.8] },
-        { variable: 'Precipitación acumulada', unidad: 'mm', valorRange: [200, 600] },
-        { variable: 'Temperatura mínima media', unidad: '°C', valorRange: [2, 12] },
-        { variable: 'Pendiente', unidad: 'grados', valorRange: [0, 15] }
-      ];
-
-      // Generar contribuciones deterministas pero variables
-      const contributions = [];
-      let sumAportes = 0;
-      
-      for (const cv of contributionVariables) {
-        // Generar valor en rango
-        const valor = deterministicRange(id + '_' + cv.variable, cv.valorRange[0], cv.valorRange[1]);
-        
-        // Generar aporte_t_ha de manera que la suma total esté entre -1.5 y 1.5
-        // Haremos que cada aporte sea proporcional al valor pero con signo y magnitud aleatorios
-        const aporteFactor = deterministicRange(id + '_' + cv.variable + '_aporte', -0.5, 0.5);
-        const aporte = aporteFactor * (valor / 100); // Escalar hacia abajo
-        
-        contributions.push({
-          variable: cv.variable,
-          valor: valor,
-          unidad: cv.unidad,
-          aporte_t_ha: aporte
-        });
-        
-        sumAportes += aporte;
-      }
-
-      // Calcular predicción base: prediccion = base + sum(aportes)
-      // Ya tenemos la predicción de la campaña más reciente
-      const latestPrediccion = campaignData.find(d => d.campaña === latestCampaign).prediccion;
-      const valor_base = latestPrediccion - sumAportes;
-
-      // Insertar contribuciones
-      const insertContrib = demoDb.prepare(`
-        INSERT INTO parcelas_contribuciones 
-        (ID_POLIGONO, campaña, versión_modelo, variable, valor, unidad, aporte_t_ha)
-        VALUES (@ID_POLIGONO, @campaña, @versión_modelo, @variable, @valor, @unidad, @aporte_t_ha)
-      `);
-
-      for (const contrib of contributions) {
-        insertContrib.run({
-          ID_POLIGONO: id,
-          campaña: latestCampaign,
-          versión_modelo: modelVersion,
-          variable: contrib.variable,
-          valor: contrib.valor,
-          unidad: contrib.unidad,
-          aporte_t_ha: contrib.aporte_t_ha
-        });
-      }
-    }
-  })();
-
-  // Cerrar bases de datos
-  refDb.close();
-  demoDb.close();
-
-  // Renombrar el archivo temporal al nombre final
-  renameSync(TEMP_DB_PATH, DEMO_DB_PATH);
-
-  console.log(`Base de demostración creada exitosamente en ${DEMO_DB_PATH}`);
-  console.log(`Procesadas ${parcelas.length} parcelas`);
-} catch (error) {
-  // Limpiar el archivo temporal en caso de error
-  if (existsSync(TEMP_DB_PATH)) {
-    unlinkSync(TEMP_DB_PATH);
   }
-  // Cerrar bases de datos si están abiertas
-  try { refDb.close(); } catch (_) {}
-  try { demoDb.close(); } catch (_) {}
-  console.error('Error al crear la base de demostración:', error);
-  process.exit(1);
+}
+function precompute(db) {
+  const groups = db.prepare('SELECT DISTINCT ID_POLIGONO, versión_modelo FROM parcelas_resultados').all();
+  const rowsQuery = db.prepare('SELECT * FROM parcelas_resultados WHERE ID_POLIGONO=? AND versión_modelo=? ORDER BY campaña');
+  const contributionQuery = db.prepare('SELECT aporte_t_ha FROM parcelas_contribuciones WHERE ID_POLIGONO=? AND campaña=? AND versión_modelo=?');
+  const update = db.prepare('UPDATE parcelas_resultados SET valor_base_t_ha=?, error_firmado_t_ha=?, error_absoluto_t_ha=?, error_relativo_pct=?, mae_historial_t_ha=? WHERE ID_POLIGONO=? AND campaña=? AND versión_modelo=?');
+  for (const group of groups) {
+    const rows = rowsQuery.all(group.ID_POLIGONO, group.versión_modelo);
+    const errors = rows.filter(r => r.observado != null).map(r => Math.abs(r.prediccion - r.observado));
+    const mae = errors.length ? errors.reduce((a,b) => a+b, 0) / errors.length : null;
+    for (const row of rows) {
+      const contributions = contributionQuery.all(row.ID_POLIGONO, row.campaña, row.versión_modelo);
+      const base = contributions.length ? row.prediccion - contributions.reduce((sum,c) => sum+c.aporte_t_ha,0) : null;
+      const error = row.observado == null ? null : row.prediccion - row.observado;
+      const absolute = error == null ? null : Math.abs(error);
+      const relative = row.observado == null || row.observado === 0 ? null : absolute / Math.abs(row.observado) * 100;
+      update.run(base, error, absolute, relative, mae, row.ID_POLIGONO, row.campaña, row.versión_modelo);
+    }
+  }
+}
+function validate(db, original) {
+  if (db.prepare('PRAGMA integrity_check').get().integrity_check !== 'ok') throw new Error('Falló integrity_check');
+  for (const table of ['parcelas','capas','datos']) {
+    const before = original.prepare(`SELECT * FROM ${table}`).all();
+    const after = db.prepare(`SELECT * FROM ${table}`).all();
+    const normalize = rows => JSON.stringify(rows.map(row => Object.fromEntries(Object.entries(row).sort())).sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+    if (normalize(before) !== normalize(after)) throw new Error(`La tabla ${table} no coincide con el origen`);
+  }
+  const results = db.prepare('SELECT * FROM parcelas_resultados').all();
+  if (!results.length) throw new Error('No hay resultados');
+  const contributions = db.prepare('SELECT aporte_t_ha FROM parcelas_contribuciones WHERE ID_POLIGONO=? AND campaña=? AND versión_modelo=?');
+  for (const row of results) {
+    if (!Number.isFinite(row.prediccion)) throw new Error('Predicción inválida');
+    const values = contributions.all(row.ID_POLIGONO,row.campaña,row.versión_modelo);
+    if (values.length && Math.abs(row.valor_base_t_ha + values.reduce((sum,c) => sum+c.aporte_t_ha,0) - row.prediccion) > 1e-9) throw new Error('Aportes incoherentes');
+    const expected = row.observado == null ? null : row.prediccion - row.observado;
+    if (expected == null ? row.error_firmado_t_ha != null : Math.abs(expected-row.error_firmado_t_ha) > 1e-9) throw new Error('Error firmado incoherente');
+  }
+}
+try {
+  if (resolve(referencePath) === outputPath) throw new Error('La salida no puede ser la base de referencia');
+  if (existsSync(outputPath)) {
+    const a=statSync(referencePath), b=statSync(outputPath);
+    if (a.dev===b.dev && a.ino===b.ino) throw new Error('La salida apunta a la base de referencia');
+  }
+  if (complete && !existsSync(outputPath)) throw new Error('No existe la base de prueba. Ejecuta npm run demo:preparar');
+  if (!complete && existsSync(outputPath)) throw new Error('La base ya existe. Usa npm run demo:completar para completar sus métricas');
+  source = openDatabase(complete ? outputPath : referencePath, {readonly:true, fileMustExist:true});
+  source.prepare('VACUUM INTO ?').run(temporaryPath);
+  target = openDatabase(temporaryPath);
+  target.prepare('PRAGMA journal_mode = DELETE').get();
+  const count = source.prepare('SELECT COUNT(*) AS n FROM parcelas').get().n;
+  target.transaction(() => {
+    target.exec(`CREATE TABLE IF NOT EXISTS parcelas_resultados (
+      ID_POLIGONO TEXT NOT NULL, campaña TEXT NOT NULL, versión_modelo TEXT NOT NULL,
+      prediccion REAL NOT NULL, observado REAL, PRIMARY KEY(ID_POLIGONO, campaña, versión_modelo));
+      CREATE TABLE IF NOT EXISTS parcelas_contribuciones (
+      ID_POLIGONO TEXT NOT NULL, campaña TEXT NOT NULL, versión_modelo TEXT NOT NULL,
+      variable TEXT NOT NULL, valor REAL, unidad TEXT NOT NULL, aporte_t_ha REAL NOT NULL,
+      PRIMARY KEY(ID_POLIGONO, campaña, versión_modelo, variable));`);
+    addResultColumns(target);
+    if (!complete) fillResults(target, source.prepare('SELECT ID_POLIGONO FROM parcelas ORDER BY ID_POLIGONO').all());
+    precompute(target);
+    validate(target,source);
+  })();
+  let backup;
+  if (complete) { backup=`${outputPath}.backup-${Date.now()}`; source.prepare('VACUUM INTO ?').run(backup); }
+  source.close(); source=null; target.close(); target=null;
+  if (complete) renameSync(temporaryPath,outputPath);
+  else { linkSync(temporaryPath,outputPath); unlinkSync(temporaryPath); }
+  console.log(`Base de demostración lista: ${outputPath}`);
+  console.log(`Integridad: ok | parcelas: ${count} | métricas precalculadas y aportes verificados`);
+  if (backup) console.log(`Copia de la base anterior: ${backup}`);
+} catch (error) {
+  try { target?.close(); } catch {}
+  try { source?.close(); } catch {}
+  for (const suffix of ['', '-wal', '-shm', '-journal']) if (existsSync(temporaryPath+suffix)) unlinkSync(temporaryPath+suffix);
+  console.error(error.message); process.exitCode=1;
 }
