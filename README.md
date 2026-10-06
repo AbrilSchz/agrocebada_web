@@ -33,3 +33,4 @@ Respalda siempre `db/parcelas_master.sqlite` antes de importar.
 1. En tu laptop: importa CSVs, apaga el servidor y corre `npm run preparar`.
 2. Sube el proyecto a GitHub (incluyendo db/parcelas_master.sqlite).
 3. Render → New Web Service → Docker. El Dockerfile ya activa READ_ONLY=1.
+
