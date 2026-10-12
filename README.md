@@ -6,6 +6,23 @@ El mapa abre en **Satelital**. El rendimiento mostrado es un resultado cerrado e
 Las fechas de abril–octubre de 2025 corresponden a los insumos, no a varios
 rendimientos de la misma parcela.
 
+Al iniciar, **Elevación** ya está seleccionada sobre el fondo satelital. El botón
+**59 parcelas**, a la izquierda de Capas, alterna entre las parcelas de predicción
+final y las 197 parcelas completas. Esas 59 no tienen observado: no constituyen
+un conjunto con errores de validación medidos. La búsqueda de una referencia
+que quedó fuera del filtro vuelve a mostrar todas para poder seleccionarla.
+
+Las pestañas y tarjetas aparecen solo cuando sus datos existen. Las referencias
+OOF conservan Errores; las predicciones finales lo ocultan. Aportes se muestra
+cuando existen contribuciones completas o los tres aportes parciales del HGB.
+Las tablas vacías se omiten. Al cambiar de parcela, una pestaña que deja de estar
+disponible vuelve automáticamente a la primera pestaña con datos.
+
+Las variables se presentan con nombres legibles (por ejemplo, **Precipitación ·
+mayo 2025**). Sus identificadores originales siguen en los CSV y aparecen al
+pasar sobre el nombre. La tabla de variables muestra solamente valores presentes;
+los datos originales conservan sus ausencias.
+
 ## Qué muestra cada parte del dashboard
 
 | Vista | Datos mostrados | Interpretación |
@@ -208,6 +225,32 @@ Las libretas contienen código para generar `WEB_1`, `WEB_2`, `WEB_3` y un model
 los CSV existentes; no afirma haber ejecutado ese código ni disponer del modelo
 serializado. Tampoco reentrena para fabricar explicaciones que no fueron entregadas.
 
+## Estados y municipios en el mapa
+
+En **Capas → Estados y municipios**, una casilla activa u oculta ambos niveles
+con un clic. Estados usa línea ámbar continua; municipios, línea azul clara
+discontinua. Esta capa es independiente del coloreado de las parcelas y no
+intercepta sus clics. Los polígonos se cargan una vez y se reutilizan al alternar.
+
+La copia local está en `public/geografia/limites.geojson`: tres estados (Hidalgo,
+Puebla y Tlaxcala) y 169 municipios cuyos rectángulos envolventes intersectan la
+región de navegación. Contiene los nueve municipios del conjunto agrícola. Los
+polígonos permanecen completos: no se recortan para dibujar fronteras artificiales
+en el borde del mapa.
+
+Fuente: [servicio oficial de INEGI](https://www.inegi.org.mx/servicios/catalogounico.html),
+Marco Geoestadístico **diciembre de 2025**, consultado el **12 de octubre de 2026**.
+Se usaron `geo/mgee/{entidad}` y `geo/mgem/{entidad}` para las claves 13, 21 y 29.
+El archivo incluye las URL, los metadatos y hashes SHA-256 de las respuestas
+originales. No depende de una llamada a INEGI durante la navegación.
+
+Las coordenadas GeoJSON conservan [longitud, latitud]. La geometría se generalizó
+con Douglas–Peucker y tolerancia 0.0005 grados; se redondeó a seis decimales. Son
+límites **geoestadísticos para referencia visual**, no una delimitación jurídica
+ni una herramienta para asignar municipios a una parcela. Los municipios de las
+fichas siguen proviniendo del paquete del modelo. Si amplías la región del mapa,
+comprueba también la cobertura de este archivo.
+
 ## Arquitectura y almacenamiento
 
 - `modelos/libretas_finales/`: fuentes recibidas y conservadas para auditoría.
@@ -282,9 +325,11 @@ las tablas y metadatos necesarios deben corresponder al contrato documentado.
 npm run verificar:importador
 npm run verificar:final
 npm run verificar:api
+npm run verificar:presentacion
 node --check server.js
 node --check public/app.js
 node --check public/config.js
+node --check public/labels.js
 git diff --check
 ```
 

@@ -2,6 +2,8 @@
 // agrega entradas aquí: { nombre, url: 'https://.../{z}/{x}/{y}.png', attribution }
 window.CONFIG = {
   baseInicial: 'sat', // 'sat' = satelital; 'calles' = OpenStreetMap.
+  capaInicial: 'final_Elevacion_INEGI_CEM4_120m_mean',
+  limitesAdministrativos: 'geografia/limites.geojson',
   centro: [19.75, -98.4], zoom: 10,
   // Región de navegación aproximada, no límites administrativos.
   // Leaflet usa [latitud, longitud]: esquina suroeste y esquina noreste.

@@ -31,7 +31,10 @@ with tempfile.TemporaryDirectory() as tmp:
                 if process.poll() is not None:raise RuntimeError(process.stdout.read())
                 time.sleep(.1)
         else:raise RuntimeError('El servidor no arrancó')
-        assert len(get('/api/parcelas')['features'])==197
+        features=get('/api/parcelas')['features']
+        assert len(features)==197
+        assert sum(f['properties'].get('cohorte')=='prediccion' for f in features)==59
+        assert sum(f['properties'].get('cohorte')=='referencia' for f in features)==138
         ref=get('/api/parcelas/AGC_001/dashboard');pred=get('/api/parcelas/AGC_003/dashboard')
         assert ref['resultado']['tipo_prediccion']=='oof' and ref['resultado']['observado']==3.5
         assert ref['resultado']['fold_id'] is None and len(ref['contexto_modelo']['validacion_parcela'])==3
@@ -43,7 +46,12 @@ with tempfile.TemporaryDirectory() as tmp:
         assert len(pred['contexto_modelo']['variables_modelo'])==187
         summary=get('/api/modelo/resumen')
         assert len(summary['validacion'])==15 and len(summary['importancias_globales'])==187
-        assert get('/api/resultados/campanas')['modelos'][0]['campanas'][0]['parcelas']==197
+        catalogue=get('/api/resultados/campanas')['modelos'][0]['campanas'][0]
+        assert catalogue['parcelas']==197 and all(catalogue['metricas_disponibles'].values())
+        borders=get('/geografia/limites.geojson')
+        assert sum(f['properties']['nivel']=='estado' for f in borders['features'])==3
+        assert sum(f['properties']['nivel']=='municipio' for f in borders['features'])==169
+        assert borders['metadata']['fuente'].startswith('INEGI')
         for metric,count in [('prediccion',197),('observado',138),('error_absoluto_t_ha',138)]:
             data=get('/api/resultados/valores?'+urllib.parse.urlencode({'campaña':'agrocebada-final','version_modelo':'ensamble-50-50-v1','metrica':metric}))
             assert sum(v is not None for v in data['valores'].values())==count

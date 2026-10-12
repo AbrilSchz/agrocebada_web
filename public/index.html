@@ -23,7 +23,10 @@
   <div id="container" class="vista">
     <section id="mapa" aria-label="Mapa de parcelas">
       <div id="map"></div>
-      <button id="layers-button" type="button" aria-expanded="false" aria-controls="layers-panel">Capas</button>
+      <div id="map-tools">
+        <button id="prediction-filter" type="button" aria-pressed="false" hidden title="Mostrar únicamente las parcelas de predicción final, sin observado">59 parcelas</button>
+        <button id="layers-button" type="button" aria-expanded="false" aria-controls="layers-panel">Capas</button>
+      </div>
       <div id="layers-panel" hidden>
         <h4>Mapa base</h4>
         <label><input type="radio" name="base" value="calles"> Calles</label>
@@ -36,6 +39,8 @@
         <label for="opacidad">Opacidad</label>
         <input id="opacidad" type="range" min="0" max="1" step="0.05" value="0.75">
         <label><input id="contornos" type="checkbox" checked> Mostrar contornos</label>
+        <label class="admin-toggle"><input id="administrative-borders" type="checkbox"> Estados y municipios</label>
+        <p id="administrative-status" role="status" hidden></p>
         <div id="leyenda"></div>
         <p id="layers-error" class="error" hidden></p>
       </div>
@@ -50,6 +55,7 @@
       </section>
       <button id="results-button" type="button" aria-expanded="false" aria-controls="results-panel">Resultados</button>
       <p id="map-status" role="status">Cargando parcelas…</p>
+      <div id="map-summary" aria-live="polite" hidden></div>
     </section>
     <section id="dashboard" aria-label="Dashboard de la parcela" aria-live="polite">
       <div id="dashboard-content">
@@ -89,6 +95,7 @@
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
+<script src="labels.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

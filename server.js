@@ -42,11 +42,15 @@ app.get('/api/health', (_q, r) => r.json({ ok: true }));
 // GeoJSON de todas las parcelas que tienen geometría
 app.get('/api/parcelas', (_q, r) => {
   const rows = db.prepare('SELECT ID_POLIGONO, longitud_ref, latitud_ref, geometria_geojson FROM parcelas ORDER BY ID_POLIGONO').all();
+  const cohorts=optionalTables.has('parcelas_contexto_modelo') ? new Map(db.prepare('SELECT ID_POLIGONO,contenido_json FROM parcelas_contexto_modelo WHERE campana=? AND version_modelo=?').all('agrocebada-final','ensamble-50-50-v1').map(row=>{
+    const context=JSON.parse(row.contenido_json);
+    return [row.ID_POLIGONO,{cohorte:context.cohorte,municipio:context.municipio}];
+  })) : new Map();
   r.json({
     type: 'FeatureCollection',
     features: rows.map(p => ({
       type: 'Feature', id: p.ID_POLIGONO,
-      properties: { ID_POLIGONO: p.ID_POLIGONO, longitud_ref: p.longitud_ref, latitud_ref: p.latitud_ref },
+      properties: { ID_POLIGONO: p.ID_POLIGONO, longitud_ref: p.longitud_ref, latitud_ref: p.latitud_ref, ...(cohorts.get(p.ID_POLIGONO) || {}) },
       geometry: JSON.parse(p.geometria_geojson)
     }))
   });
@@ -136,14 +140,16 @@ app.get('/api/modelo/resumen', (req,res) => {
 app.get('/api/resultados/campanas', (_req,res) => {
   try {
     requireDashboardSchema();
-    const rows=db.prepare(`SELECT versión_modelo AS version_modelo,campaña,COUNT(*) AS parcelas
+    const rows=db.prepare(`SELECT versión_modelo AS version_modelo,campaña,COUNT(*) AS parcelas,
+      COUNT(prediccion) AS predicciones,COUNT(observado) AS observados,COUNT(error_firmado_t_ha) AS errores
       FROM parcelas_resultados GROUP BY versión_modelo,campaña ORDER BY versión_modelo,campaña`).all();
     const models=[];
     for (const row of rows) {
       let model=models.find(m => m.version_modelo === row.version_modelo);
       if (!model) { model={version_modelo:row.version_modelo,campanas:[]};models.push(model); }
       const metadata=importMetadata(row.campaña,row.version_modelo);
-      model.campanas.push({campaña:row.campaña,parcelas:row.parcelas,label:metadata?.label || 'Resultados almacenados',dataset_id:metadata?.dataset_id || row.campaña});
+      model.campanas.push({campaña:row.campaña,parcelas:row.parcelas,label:metadata?.label || 'Resultados almacenados',dataset_id:metadata?.dataset_id || row.campaña,
+        metricas_disponibles:{prediccion:row.predicciones>0,observado:row.observados>0,error_firmado_t_ha:row.errores>0,error_absoluto_t_ha:row.errores>0}});
     }
     res.json({modelos:models,metricas:temporalMetrics});
   } catch(error) { sendError(res,error); }

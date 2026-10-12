@@ -53,3 +53,34 @@ main{flex:1;min-height:0;display:flex}#container{flex:1;display:flex;min-width:0
 
 /* Contexto del modelo y evaluación de los artefactos finales. */
 .model-context{padding:16px;margin:14px 0;background:#f3f6f0;border:1px solid #dce6d5;border-radius:14px}.model-context h3{margin:0 0 8px}.model-context p{margin:8px 0}.interval-value{font-size:24px;font-weight:700}.parcel-link{border:0;background:transparent;color:#245f3c;text-decoration:underline;cursor:pointer;padding:6px 0}.importance-list{display:grid;gap:12px;margin:16px 0}.importance-row{display:grid;gap:4px}.importance-row>span{font-size:12px;overflow-wrap:anywhere}.importance-track{height:12px;border-radius:6px;background:#eef0e8;overflow:hidden}.importance-track>div{height:100%;background:#3b528b;border-radius:6px}.importance-row small{color:#53634e}.table-wrap td{overflow-wrap:anywhere}#documentacion{padding:28px;max-width:1000px;margin:auto;overflow:auto;line-height:1.6}#documentacion a{color:#245f3c}.chart-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+
+/* Jerarquía visual y controles del mapa. */
+:root{--sage:#218f83;--sky:#496f9a;--clay:#b76453;--cream:#fff8e9;--lavender:#f0effa}
+#dashboard{background:radial-gradient(ellipse at top right,#dfebee70,transparent 46%),radial-gradient(ellipse at bottom left,#fff0d850,transparent 55%),#f5f7f3}
+#map-tools{position:absolute;top:14px;right:14px;z-index:1000;display:flex;align-items:center;gap:8px}
+#map-tools button{position:static;min-height:42px;padding:11px 15px;border-radius:12px;border:1px solid #ffffff70;box-shadow:0 4px 14px #122d3525;cursor:pointer;font:inherit;font-size:12px;font-weight:650;transition:background .2s,transform .2s}
+#map-tools #layers-button{background:#123e35;color:#fff}
+#prediction-filter{color:#24496b;background:#f1f6fd}
+#prediction-filter[aria-pressed=true]{background:#365f88;color:#fff;border-color:#95b8d7}
+#map-tools button:hover{transform:translateY(-1px)}
+#layers-panel{width:min(285px,calc(100% - 28px));padding:18px}
+#layers-panel h4{color:#355967;margin:12px 0 9px}#layers-panel h4:first-child{margin-top:0}
+#layers-panel select{background:white;color:#173e32;border:1px solid #cddbd5;border-radius:9px;padding:9px}
+#layers-panel input[type=checkbox],#layers-panel input[type=radio]{accent-color:var(--sage)}
+.admin-toggle{padding-top:10px;border-top:1px solid #dce6e3}
+#administrative-status{color:#34545b;font-size:11px;line-height:1.6;background:#eef6f5;padding:9px;border-radius:8px}
+.border-key{display:inline-block;width:20px;vertical-align:middle;margin:0 5px 2px 0}.state-key{border-top:3px solid #bf8730}.municipality-key{border-top:2px dashed #3991a4;margin-left:9px}
+#map-summary{position:absolute;bottom:35px;right:14px;max-width:calc(100% - 145px);z-index:900;pointer-events:none;background:#fffffff0;backdrop-filter:blur(12px);padding:11px 14px;border:1px solid #ffffff90;border-radius:12px;box-shadow:0 4px 18px #152f3520}
+#map-summary strong{display:block;font-size:12px;color:#244c57}#map-summary>span{display:block;font-size:10px;color:#526a6c;margin-top:3px}
+.dashboard-heading{align-items:center}.dashboard-heading .eyebrow{margin-bottom:7px;color:#486c76}
+.cohort-badge{padding:7px 10px;border-radius:9px;font-size:10px;font-weight:700;white-space:nowrap;max-width:100%}.cohort-final{color:#365f88;background:#eaf2ff;border:1px solid #cadcf1}.cohort-reference{color:#7a6426;background:#fff4d9;border:1px solid #e9d7a4}
+.metrics{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}.metric{border-top-width:3px;box-shadow:0 4px 13px #203b3507}.metric-prediction{border-top-color:#218f83;background:#f9fffd}.metric-observed{border-top-color:#657daa;background:#fbfcff}.metric-signed{border-top-color:#b96b59;background:#fffdfb}.metric-absolute{border-top-color:#c59a45;background:#fffef8}.metric-relative{border-top-color:#8a7ca8;background:#fdfbff}.metric-value>span{font-size:.6em;font-weight:550;color:#60736a}
+.component-context{background:linear-gradient(110deg,#eef7f4,#eef3fa);border-color:#d4e4e3}.component-context .eyebrow{color:#4c7380;letter-spacing:1.5px}
+.component-values{display:flex;align-items:center;gap:24px;margin:12px 0}.component-values>div{flex:1}.component-values>div>span{display:block;color:#5b7378;font-size:11px;margin-bottom:5px}.component-values strong{font-size:22px;color:#28555e}.component-values small{font-size:11px;font-weight:500}.component-plus{color:#839a9e;font-size:18px}
+.interval-context{background:linear-gradient(110deg,#fff6e6,#fcfaef);border-color:#ebddbd}.interval-context .eyebrow{color:#917135;letter-spacing:1.3px}.interval-value{color:#765421;letter-spacing:-.4px}.interval-value small{font-size:13px}
+.chart-tabs{background:#eaf0f2;gap:6px}.chart-tabs button[aria-selected=true]{color:#294c68;box-shadow:0 3px 9px #33597813}.chart-tabs button[data-chart-tab=aportes][aria-selected=true]{color:#89612d;background:#fff8e8}
+.chart h3{color:#34566a}.data-details summary{color:#355363;font-size:12px}.data-details summary:hover{background:#f1f6f7}.data-details>p{font-size:11px;color:#61757a;padding:0 16px;line-height:1.6}.data-details li{font-size:11px;color:#61757a;line-height:1.6;margin-bottom:8px}.data-details ul{padding:0 18px 10px 32px}
+th{background:#eef3f6;color:#557081}td{line-height:1.5}.positive-number{color:#147765}.negative-number{color:#a45746}
+.importance-track>.importance-color-0{background:#4c759e}.importance-track>.importance-color-1{background:#42998e}.importance-track>.importance-color-2{background:#c1a166}
+@media(max-width:1050px){.metrics{grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}.cohort-badge{white-space:normal}.component-values{gap:15px}}
+@media(max-width:700px){#map-tools{right:12px;top:12px;gap:6px}#map-tools button{padding:10px 12px;font-size:11px}#map-summary{bottom:35px;right:12px;padding:9px 11px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metrics:has(.metric:only-child){grid-template-columns:1fr}.dashboard-heading{align-items:flex-start}.component-values strong{font-size:21px}.interval-value{font-size:23px}.chart-tabs button{min-height:39px}.nav input{min-height:40px}}
