@@ -24,7 +24,7 @@
     <section id="mapa" aria-label="Mapa de parcelas">
       <div id="map"></div>
       <div id="map-tools">
-        <button id="prediction-filter" type="button" aria-pressed="false" hidden title="Mostrar únicamente las parcelas de predicción final, sin observado">59 parcelas</button>
+        <button id="prediction-filter" type="button" aria-pressed="false" hidden title="Mostrar únicamente las 59 parcelas con predicción final, sin rendimiento observado">Parcelas de validación</button>
         <button id="layers-button" type="button" aria-expanded="false" aria-controls="layers-panel">Capas</button>
       </div>
       <div id="layers-panel" hidden>
@@ -36,6 +36,11 @@
         <select id="capa"><option value="">— Solo contornos —</option></select>
         <label class="sr-only" for="fecha">Fecha de la capa</label>
         <select id="fecha" hidden></select>
+        <h4>Filtrar parcelas</h4>
+        <label for="map-municipality">Municipio</label>
+        <select id="map-municipality"><option value="">Todos los municipios</option></select>
+        <label for="map-query">Buscar en las parcelas</label>
+        <input id="map-query" type="search" placeholder="ID o municipio…">
         <label for="opacidad">Opacidad</label>
         <input id="opacidad" type="range" min="0" max="1" step="0.05" value="0.75">
         <label><input id="contornos" type="checkbox" checked> Mostrar contornos</label>
@@ -62,7 +67,7 @@
         <div class="ai-hero">
           <span class="eyebrow">INTELIGENCIA PARA TU PARCELA</span>
           <button id="info-button" class="info-button" type="button" disabled aria-describedby="ai-caption">
-            <span class="ai-mark" aria-hidden="true">✦</span><span class="ai-button-copy"><strong>AI ANALYTICS</strong><span>Explora lo que cuentan tus datos</span></span><span class="ai-arrow" aria-hidden="true">↗</span>
+            <span class="ai-mark" aria-hidden="true">✦</span><span class="ai-button-copy"><strong>AI ANALYTICS</strong><span>Explora lo que cuentan tus datos</span><span class="ai-cta">Haz clic aquí ↗</span></span><span class="ai-arrow" aria-hidden="true">↗</span>
           </button>
           <p id="ai-caption">Selecciona una parcela para activar el análisis.</p>
           <div id="info-loading" class="loading" role="status" hidden><span class="loading-orbit" aria-hidden="true"></span>Generando análisis…</div>
@@ -77,25 +82,65 @@
     </section>
   </div>
   <section id="tabla" class="vista" hidden aria-label="Listado de parcelas">
-    <div class="tabla-wrap"><table id="t"><caption>Parcelas disponibles</caption></table></div>
+    <div class="page-heading"><div><span class="eyebrow">EXPLORADOR DE DATOS</span><h1>Parcelas</h1><p>La misma selección del mapa, en una tabla. Filtra, ordena y abre una ficha sin salir de aquí.</p></div><button id="table-export" type="button" class="secondary-button" disabled>Descargar tabla CSV</button></div>
+    <div class="table-filters" aria-label="Filtros compartidos con el mapa">
+      <div class="cohort-control"><span>Conjunto de parcelas</span><button id="table-cohort" type="button" aria-pressed="false" hidden>Parcelas de validación</button><small>Activa para ver solo las 59 con predicción final.</small></div>
+      <label for="table-municipality">Municipio<select id="table-municipality"><option value="">Todos los municipios</option></select></label>
+      <label for="table-query">Buscar parcela<input id="table-query" type="search" placeholder="ID o municipio…"></label>
+      <label for="table-source">Datos a consultar<select id="table-source"><option value="capas">Capas temáticas</option><option value="resultados">Resultados del modelo</option></select></label>
+      <label id="table-layer-label" for="table-layer">Capa<select id="table-layer"></select></label>
+      <label id="table-date-label" for="table-date" hidden>Periodo del insumo<select id="table-date"></select></label>
+      <label id="table-set-label" for="table-set" hidden>Conjunto y modelo<select id="table-set"></select></label>
+      <label id="table-metric-label" for="table-metric" hidden>Métrica<select id="table-metric"></select></label>
+      <button id="table-reset" type="button" class="secondary-button">Limpiar filtros de parcelas</button>
+    </div>
+    <p id="table-status" class="table-status" role="status">Cargando parcelas…</p>
+    <div class="table-layout">
+      <div class="tabla-wrap"><table id="t"><caption>Parcelas disponibles</caption></table></div>
+      <aside id="table-detail" class="table-detail" hidden aria-label="Ficha de parcela" aria-live="polite"></aside>
+    </div>
   </section>
   <section id="documentacion" class="vista" hidden aria-label="Documentación">
-    <h1>Datos finales de AgroCebada</h1>
-    <p>197 parcelas: 138 con rendimiento observado y predicción OOF de validación; 59 con predicción final del ensamble KNN + HGB, con pesos 50/50. El rendimiento es un resultado cerrado en t/ha, sin serie anual. Los insumos climáticos y satelitales corresponden a abril–octubre de 2025.</p>
-    <p>Modelo muestra las métricas reportadas en tres esquemas de validación y las importancias globales del HGB agronómico. Aportes muestra, cuando existen, tres valores SHAP redondeados del componente HGB final. No constituyen una explicación completa del ensamble.</p>
-    <p>Los intervalos empíricos nominales al 80 % se construyen con errores OOF; no garantizan cobertura. Los municipios y vecinos describen contexto espacial, sin identificar al productor ni demostrar manejo compartido.</p>
-    <ul>
-      <li><a href="/fuentes/05_final/dashboard_parcelas_prediccion.csv" download>Descargar las 59 predicciones finales con contexto</a></li>
-      <li><a href="/fuentes/05_final/dashboard_parcelas_referencia.csv" download>Descargar las 138 referencias observadas</a></li>
-      <li><a href="/fuentes/03_validacion/resultados_validacion.csv" download>Descargar las métricas de validación</a></li>
-      <li><a href="/api/modelo/resumen" target="_blank" rel="noopener">Consultar resumen y trazabilidad</a></li>
-      <li><a href="https://github.com/RoshTzsche/agrocebada_web#readme" target="_blank" rel="noopener">Leer metodología, unidades y limitaciones en el README</a></li>
-    </ul>
+    <div class="page-heading"><div><span class="eyebrow">DEL RETO A LOS RESULTADOS</span><h1>Documentación</h1><p>Conoce el problema, el trabajo del equipo y cómo llegamos a las predicciones. Las libretas reúnen explicaciones, código y salidas guardadas de cada etapa del modelo.</p></div></div>
+    <div class="doc-tabs" role="tablist" aria-label="Apartados de documentación">
+      <button id="doc-tab-reto" role="tab" type="button" aria-selected="true" aria-controls="doc-panel-reto">Acerca del reto</button>
+      <button id="doc-tab-equipo" role="tab" type="button" aria-selected="false" aria-controls="doc-panel-equipo" tabindex="-1">Acerca del equipo</button>
+      <button id="doc-tab-resultados" role="tab" type="button" aria-selected="false" aria-controls="doc-panel-resultados" tabindex="-1">Resultados</button>
+      <button id="doc-tab-codigo" role="tab" type="button" aria-selected="false" aria-controls="doc-panel-codigo" tabindex="-1">Código y notebooks</button>
+    </div>
+    <section id="doc-panel-reto" class="doc-panel" role="tabpanel" aria-labelledby="doc-tab-reto">
+      <h2>Predecir rendimiento de cebada a partir del territorio</h2>
+      <p>El proyecto AgroCebada combina mediciones satelitales, clima y topografía para estimar el rendimiento por parcela. Las 138 parcelas con rendimiento conocido sirven para desarrollar y evaluar los modelos; el modelo final estima las otras 59.</p>
+      <div class="doc-cards"><article><span class="eyebrow">INSUMOS</span><h3>Abril–octubre de 2025</h3><p>La ventana de los insumos es temporal. El rendimiento que mostramos es un único resultado cerrado en toneladas por hectárea.</p></article><article><span class="eyebrow">PREGUNTA CENTRAL</span><h3>¿Funciona en zonas nuevas?</h3><p>Comparamos validación con parcelas intercaladas y validación por grupos espaciales. La ubicación puede ayudar a interpolar sin demostrar que el modelo generaliza a otro municipio.</p></article></div>
+      <p>El material no aporta fechas de siembra, dosis de fertilización ni identidad de productores. Compartir municipio no demuestra compartir manejo o condiciones.</p>
+      <p class="doc-source">Descripción basada en las libretas y el reporte recibidos. <a href="/documentacion/archivos/reporte" download>Descargar reporte metodológico</a>.</p>
+    </section>
+    <section id="doc-panel-equipo" class="doc-panel" role="tabpanel" aria-labelledby="doc-tab-equipo" hidden>
+      <h2>El trabajo detrás de AgroCebada</h2><p>El proyecto conecta análisis geoespacial, desarrollo de modelos y una interfaz que permite explorar sus resultados.</p>
+      <div class="doc-cards"><article><span class="eyebrow">DATOS Y TERRITORIO</span><h3>Calidad e ingeniería</h3><p>Revisión de sensores, cobertura mensual, extracción de clima y topografía, y construcción de variables.</p></article><article><span class="eyebrow">MODELOS</span><h3>Evaluación e interpretación</h3><p>Validación espacial, comparación de modelos, análisis de importancia y generación de predicciones.</p></article><article><span class="eyebrow">APLICACIÓN</span><h3>Integración y comunicación</h3><p>Importación de artefactos, mapa, tablas y documentación para consultar cada resultado con su contexto.</p></article></div>
+      <p class="doc-source">Estos apartados describen áreas de trabajo, sin asignarlas a personas. Los nombres y créditos individuales se incorporarán cuando el equipo los comparta.</p>
+    </section>
+    <section id="doc-panel-resultados" class="doc-panel" role="tabpanel" aria-labelledby="doc-tab-resultados" hidden>
+      <h2>Resultados y cómo leerlos</h2>
+      <div class="doc-cards"><article><span class="eyebrow">138 REFERENCIAS</span><h3>Predicción OOF</h3><p>Cada parcela se predice fuera del ajuste que utiliza su observado. La cifra por parcela promedia las tres repeticiones de RepeatedKFold.</p></article><article><span class="eyebrow">59 PARCELAS RESTANTES</span><h3>Ensamble final 50/50</h3><p>Combina KNN espacial y HGB ajustados con las 138 referencias. Sin observado, no se calcula error por parcela.</p></article></div>
+      <p>El botón «Parcelas de validación» selecciona las 59 parcelas de predicción final. La evaluación con rendimiento conocido corresponde a las 138 referencias OOF.</p>
+      <p>Los tres aportes SHAP redondeados disponibles explican parcialmente el componente HGB, no todo el ensamble. Los intervalos empíricos nominales al 80 % no garantizan cobertura.</p>
+      <ul class="doc-links"><li><a href="/fuentes/05_final/dashboard_parcelas_prediccion.csv" download>59 predicciones finales con contexto · CSV</a></li><li><a href="/fuentes/05_final/dashboard_parcelas_referencia.csv" download>138 referencias observadas · CSV</a></li><li><a href="/fuentes/03_validacion/resultados_validacion.csv" download>Métricas de los tres esquemas de validación · CSV</a></li><li><a href="/api/modelo/resumen" target="_blank" rel="noopener">Resumen y trazabilidad · JSON</a></li><li><a href="https://github.com/RoshTzsche/agrocebada_web#readme" target="_blank" rel="noopener">Metodología, unidades y limitaciones · README</a></li></ul>
+    </section>
+    <section id="doc-panel-codigo" class="doc-panel" role="tabpanel" aria-labelledby="doc-tab-codigo" hidden>
+      <h2>Del dato a la predicción: código del proyecto</h2><p>Abre las libretas en orden para consultar su explicación, código y salidas guardadas. La web las muestra sin ejecutar modelos; puedes descargarlas para trabajar en Jupyter.</p>
+      <div id="notebook-list" class="notebook-list"></div><p id="doc-code-status" role="status" hidden></p>
+      <div id="notebook-viewer" hidden></div>
+      <h3>Importación y aplicación</h3><div id="source-list" class="doc-links"></div>
+      <p class="doc-source">El ZIP recibido contiene estas cuatro libretas y sus artefactos. Para volver a ejecutarlas hacen falta el dataset original, los rásteres y el entorno indicado en el código. Sus salidas guardadas documentan una corrida; no se recalculan al abrir esta página.</p>
+    </section>
   </section>
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="labels.js"></script>
+<script src="parcels.js"></script>
+<script src="documentation.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -7,7 +7,8 @@ Las fechas de abril–octubre de 2025 corresponden a los insumos, no a varios
 rendimientos de la misma parcela.
 
 Al iniciar, **Elevación** ya está seleccionada sobre el fondo satelital. El botón
-**59 parcelas**, a la izquierda de Capas, alterna entre las parcelas de predicción
+**Parcelas de validación**, a la izquierda de Capas, conserva su nombre activado
+o desactivado y alterna entre las parcelas de predicción
 final y las 197 parcelas completas. Esas 59 no tienen observado: no constituyen
 un conjunto con errores de validación medidos. La búsqueda de una referencia
 que quedó fuera del filtro vuelve a mostrar todas para poder seleccionarla.
@@ -34,12 +35,70 @@ los datos originales conservan sus ausencias.
 | Contexto | Municipio, componentes KNN/HGB, intervalo empírico y vecinos | Intervalos y vecinos finales disponibles para las 59 parcelas de predicción. |
 | Capas | PREC, Tmax y Tmin mensuales; elevación y pendiente | Cinco capas finales con unidad, fuente y agregación separadas. |
 | Resultados | Coloreado por predicción, observado o error | Gris significa ausencia de dato; no significa rendimiento cero. |
-| Documentación | Explicación breve y descarga de CSV originales | Permite contrastar la interfaz con las fuentes recibidas. |
+| Parcelas | Tabla con filtros, valores, ordenación y ficha dentro de la vista | Comparte la selección del mapa y permite trabajar sin abrirlo. |
+| Documentación | Reto, Equipo, Resultados y Código y notebooks | Explica el proyecto y permite leer las cuatro libretas y descargar las fuentes. |
 
-El botón **AI ANALYTICS** explica valores ya almacenados. No ejecuta el modelo ni
+El botón **AI ANALYTICS**, con la leyenda **Haz clic aquí**, explica valores ya almacenados. No ejecuta el modelo ni
 sustituye sus predicciones. En modo `mock` produce una explicación local sin API
 externa; en modo `live`, Gemini recibe contexto del servidor. La clave permanece
 en el entorno del servidor, nunca en `public/` ni en los archivos versionados.
+
+## Explorar parcelas como tabla
+
+En **Parcelas** puedes filtrar por las 59 parcelas finales, municipio y búsqueda
+por ID o municipio. **Datos a consultar** alterna capas temáticas y resultados:
+elige capa y periodo del insumo, o conjunto/modelo y métrica. Estos controles
+comparten el estado con el mapa en ambos sentidos. La elevación seleccionada al
+iniciar también aparece en la tabla. El rendimiento sigue siendo cerrado: el
+selector de periodo solo corresponde a los insumos de una capa.
+
+Pulsa los encabezados para ordenar de forma ascendente o descendente; los
+valores ausentes quedan al final en ambos casos. Una celda vacía se representa
+con «—», sin convertirse en cero. Al pulsar el ID se abre una ficha con los
+valores existentes y las variables del modelo dentro de Parcelas. **Ver en el
+mapa y abrir dashboard** es la acción explícita para cambiar de vista.
+**Descargar tabla CSV** exporta las filas filtradas en el orden actual y la capa
+o métrica elegida, con su unidad y periodo en el encabezado; conserva los vacíos.
+
+**Limpiar filtros de parcelas** restablece población, municipio y búsqueda;
+conserva la capa o métrica seleccionada. Fondo satelital/calles, opacidad,
+contornos y límites administrativos son ajustes visuales del mapa: no filtran
+filas ni modifican mediciones, por lo que no son controles de la tabla.
+
+## Documentación y notebooks
+
+La entrada de Documentación explica qué contiene y ofrece cuatro apartados:
+
+- **Acerca del reto:** problema, datos y alcance del análisis según el material recibido.
+- **Acerca del equipo:** áreas de trabajo. Los nombres y créditos individuales
+  quedan pendientes de que el equipo los comparta; el reporte recibido usa «Person».
+- **Resultados:** diferencias entre las 138 referencias OOF y las 59 predicciones
+  finales, limitaciones y descargas de los CSV originales.
+- **Código y notebooks:** cuatro libretas en orden, código de importación y de la
+  aplicación, reporte y acceso al repositorio completo.
+
+El visor muestra explicaciones, todas las celdas de código y salidas guardadas
+de texto e imágenes PNG/JPEG. No ejecuta notebooks ni entrena modelos. Omite
+salidas HTML/JavaScript/SVG y escapa texto antes de insertarlo en la página.
+Los notebooks `.ipynb` descargados conservan exactamente los bytes originales.
+Para repetir una corrida hacen falta también el dataset original, los rásteres
+y el entorno que las libretas utilizan; ver una salida guardada no verifica su
+reproducibilidad ni recalcula las métricas.
+
+Para incorporar otra libreta:
+
+1. Guarda el `.ipynb` en `modelos/libretas_finales/`.
+2. Añade `id` único, `archivo`, `titulo` y `descripcion` en la lista `notebooks`
+   de [modelos/documentacion.json](modelos/documentacion.json), en el orden de lectura.
+3. Reinicia el servidor y ejecuta la verificación de API y presentación,
+   ajustando el recuento esperado de libretas si se añade una quinta.
+
+`GET /api/documentacion` entrega el catálogo;
+`GET /api/documentacion/notebooks/:id` entrega las celdas para lectura, y
+`GET /documentacion/archivos/:id` descarga los originales. Solo se sirven IDs
+registrados: estas rutas no aceptan una ruta arbitraria del sistema de archivos.
+El contenido del reto/equipo/resultados está en `public/index.html`; el catálogo
+de libretas y fuentes está separado para ampliarlo sin cambiar el visor.
 
 ## Fuente y población
 
