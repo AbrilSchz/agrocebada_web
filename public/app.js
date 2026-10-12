@@ -35,6 +35,8 @@ function color(t) {
   return `rgb(${a.map((x, k) => Math.round(x + (b[k] - x) * f))})`;
 }
 let geo, allParcels=null, predictionOnly=false, administrativeLayer=null, administrativePromise=null;
+const parcelFilters={municipality:'',query:''}, tableSort={key:'id',direction:'asc'};
+const valueState={loading:false,error:'',parcelError:''};
 let capas = [], valores = {}, rango = [0, 1], selectedParcelId = null;
 let dashboardSequence = 0, dashboardController = null, infoSequence = 0, infoController = null, currentDashboard = null, layerSequence = 0;
 const estilo = feature => {
@@ -43,12 +45,13 @@ const estilo = feature => {
     fillColor: v == null ? '#888' : color((v - rango[0]) / (rango[1] - rango[0] || 1)),
     fillOpacity: Number($('#opacidad').value) * (v == null ? 0.4 : 1) };
 };
-function refreshStyle() { if (geo) geo.setStyle(estilo); }
-function visibleFeatures() {return allParcels?.features.filter(f=>!predictionOnly || f.properties.cohorte==='prediccion') || [];}
+function refreshStyle() { if (geo) geo.setStyle(estilo); renderParcelTable(); }
+function visibleFeatures() {return window.PARCELS.filter(allParcels?.features || [],{...parcelFilters,predictionOnly});}
 function updateMapSummary() {
   const visible=visibleFeatures(),name=resultMap.enabled ? $('#results-metric').selectedOptions[0]?.textContent : capas.find(c=>c.id===$('#capa').value)?.nombre;
   $('#map-summary').hidden=!visible.length;
   $('#map-summary').innerHTML=`<strong>${esc(name || 'Parcelas')}</strong><span>${visible.length} parcelas${predictionOnly ? ' de predicción final' : ' en el mapa'}</span>`;
+  if(resultMap.enabled && !valueState.loading && !valueState.error) $('#results-caption').textContent=`${visible.filter(f=>hasNumber(valores[f.id])).length} parcelas con dato · ${resultMap.unit || 't/ha'}`;
 }
 function drawParcels() {
   const features=visibleFeatures();
@@ -59,9 +62,7 @@ function drawParcels() {
   })}).addTo(map);
   if(selectedParcelId && !features.some(f=>String(f.id)===selectedParcelId)) clearSelection();
   $('#ids').innerHTML=features.map(f=>`<option value="${esc(f.id)}"></option>`).join('');
-  $('#t').innerHTML=`<caption>${features.length} parcelas${predictionOnly ? ' de predicción final' : ''}</caption><thead><tr><th>Parcela</th><th>Municipio</th><th>Conjunto</th></tr></thead><tbody>`+
-    features.map(f=>`<tr data-id="${esc(f.id)}"><td><button type="button">${esc(f.id)}</button></td><td>${esc(f.properties.municipio || '')}</td><td>${f.properties.cohorte==='prediccion' ? 'Predicción final' : f.properties.cohorte==='referencia' ? 'Entrenamiento · OOF' : ''}</td></tr>`).join('')+'</tbody>';
-  $('#t').onclick=e=>{const id=e.target.closest('tr')?.dataset.id;if(id)irA(id);};
+  renderParcelTable();
   updateMapSummary();
 }
 function updatePredictionFilter(enabled) {
@@ -71,6 +72,64 @@ function updatePredictionFilter(enabled) {
   if(resultMap.enabled) {updateResultMetrics();paintResultMap();}
 }
 $('#prediction-filter').onclick=()=>updatePredictionFilter(!predictionOnly);
+function syncTableControls() {
+  $('#table-cohort').hidden=$('#prediction-filter').hidden;
+  $('#table-cohort').setAttribute('aria-pressed',String(predictionOnly));
+  for(const prefix of ['map','table']) {
+    if($('#'+prefix+'-query').value!==parcelFilters.query) $('#'+prefix+'-query').value=parcelFilters.query;
+    $('#'+prefix+'-municipality').value=parcelFilters.municipality;
+  }
+  $('#table-source').value=resultMap.enabled ? 'resultados' : 'capas';
+  for(const [target,source] of [['layer','capa'],['date','fecha'],['set','results-set'],['metric','results-metric']]) {
+    const a=$('#table-'+target),b=$('#'+source);
+    if(a.innerHTML!==b.innerHTML) a.innerHTML=b.innerHTML;
+    a.value=b.value;
+  }
+  $('#table-layer-label').hidden=resultMap.enabled;
+  $('#table-date-label').hidden=resultMap.enabled || $('#fecha').hidden;
+  $('#table-set-label').hidden=$('#table-metric-label').hidden=!resultMap.enabled;
+}
+function tableValueLabel() {
+  if(resultMap.enabled) return `${$('#results-metric').selectedOptions[0]?.textContent || 'Predicción'} (${resultMap.unit || 't/ha'})`;
+  const layer=capas.find(c=>c.id===$('#capa').value);
+  return layer ? `${layer.nombre}${$('#fecha').value ? ' · '+P.date($('#fecha').value) : ''}${layer.unidad ? ' ('+layer.unidad+')' : ''}` : '';
+}
+function renderParcelTable() {
+  syncTableControls();
+  const features=window.PARCELS.sort(visibleFeatures(),{...tableSort,values:valores}),label=tableValueLabel();
+  const header=(key,name)=>`<th scope="col" aria-sort="${tableSort.key===key ? tableSort.direction==='asc' ? 'ascending' : 'descending' : 'none'}"><button type="button" data-sort="${key}">${esc(name)} ${tableSort.key===key ? tableSort.direction==='asc' ? '↑' : '↓' : '↕'}</button></th>`;
+  $('#t').innerHTML=`<caption>${features.length} parcelas · ${esc(label || 'Identidad y conjunto')}</caption><thead><tr>${header('id','Parcela')}${header('municipio','Municipio')}${header('cohorte','Conjunto')}${label ? header('value',label) : ''}</tr></thead><tbody>`+
+    features.map(f=>`<tr data-id="${esc(f.id)}"${String(f.id)===selectedParcelId ? ' class="selected-row"' : ''}><td><button type="button" data-parcel="${esc(f.id)}" aria-label="Abrir ficha de ${esc(f.id)}">${esc(f.id)}</button></td><td>${esc(f.properties.municipio || '')}</td><td><span class="table-cohort-badge ${f.properties.cohorte==='prediccion' ? 'cohort-final' : 'cohort-reference'}">${esc(window.PARCELS.cohort(f))}</span></td>${label ? `<td class="numeric-cell">${hasNumber(valores[f.id]) ? esc(number(valores[f.id],3)) : '<span aria-label="Sin medición">—</span>'}</td>` : ''}</tr>`).join('')+
+    (!features.length ? `<tr><td colspan="${label ? 4 : 3}">Ninguna parcela coincide con estos filtros.</td></tr>` : '')+'</tbody>';
+  $('#table-status').textContent=valueState.parcelError ? `No se pudieron cargar las parcelas: ${valueState.parcelError}` : valueState.loading ? 'Cargando valores de la selección…' : valueState.error ? `No se pudieron cargar los datos: ${valueState.error}` : `${features.length} de ${allParcels?.features.length || 0} parcelas${label ? ' · '+features.filter(f=>hasNumber(valores[f.id])).length+' con dato' : ''}. Los filtros se comparten con el mapa.`;
+  $('#table-status').classList.toggle('error',Boolean(valueState.error || valueState.parcelError));
+  $('#table-export').disabled=!features.length || valueState.loading || Boolean(valueState.error);
+}
+$('#t').onclick=e=>{
+  const sort=e.target.closest('[data-sort]')?.dataset.sort,id=e.target.closest('[data-parcel]')?.dataset.parcel;
+  if(sort) {tableSort.direction=tableSort.key===sort && tableSort.direction==='asc' ? 'desc' : 'asc';tableSort.key=sort;renderParcelTable();$('#t').querySelector?.(`[data-sort="${sort}"]`)?.focus();}
+  if(id) selectParcel(id);
+};
+$('#table-detail').onclick=e=>{
+  if(e.target.closest('[data-detail-close]')) clearSelection();
+  if(e.target.closest('[data-detail-map]') && selectedParcelId) irA(selectedParcelId);
+};
+$('#table-cohort').onclick=()=>updatePredictionFilter(!predictionOnly);
+for(const prefix of ['map','table']) {
+  $('#'+prefix+'-municipality').onchange=e=>{parcelFilters.municipality=e.target.value;drawParcels();};
+  $('#'+prefix+'-query').oninput=e=>{parcelFilters.query=e.target.value;drawParcels();};
+}
+$('#table-reset').onclick=()=>{parcelFilters.municipality='';parcelFilters.query='';updatePredictionFilter(false);};
+$('#table-source').onchange=e=>e.target.value==='resultados' ? activateResultMap() : disableResultMap();
+$('#table-layer').onchange=e=>{$('#capa').value=e.target.value;return $('#capa').onchange();};
+$('#table-date').onchange=e=>{$('#fecha').value=e.target.value;return $('#fecha').onchange();};
+$('#table-set').onchange=e=>{$('#results-set').value=e.target.value;return $('#results-set').onchange({target:$('#results-set')});};
+$('#table-metric').onchange=e=>{$('#results-metric').value=e.target.value;return $('#results-metric').onchange({target:$('#results-metric')});};
+$('#table-export').onclick=()=>{
+  const rows=window.PARCELS.sort(visibleFeatures(),{...tableSort,values:valores});
+  const url=URL.createObjectURL(new Blob(['\ufeff'+window.PARCELS.csv(rows,valores,tableValueLabel() || 'Valor')],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download='agrocebada-parcelas.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
 L.DomEvent.disableClickPropagation($('#map-tools'));
 map.createPane('administrative');
 map.getPane('administrative').style.zIndex=450;
@@ -126,7 +185,9 @@ async function pintar() {
   if (resultMap.enabled) return;
   const sequence = ++layerSequence, capa = $('#capa').value, fSel = $('#fecha');
   $('#layers-error').hidden = true;
-  if (!capa) { valores = {}; fSel.hidden = true; $('#leyenda').replaceChildren(); refreshStyle(); return; }
+  valueState.error='';valores={};
+  if (!capa) { valueState.loading=false;fSel.hidden = true; $('#leyenda').replaceChildren(); refreshStyle();updateMapSummary();return; }
+  valueState.loading=true;refreshStyle();
   try {
     if (fSel.dataset.capa !== capa) {
       const fechas = await json(`/api/capas/${encodeURIComponent(capa)}/fechas`);
@@ -137,25 +198,27 @@ async function pintar() {
     fSel.hidden = !fSel.value || fSel.options.length<2;
     const data = await json(`/api/capas/${encodeURIComponent(capa)}/valores?fecha=${encodeURIComponent(fSel.value)}`);
     if (sequence !== layerSequence || resultMap.enabled) return;
-    valores = data.valores;
+    valores = data.valores;valueState.loading=false;
     const c = capas.find(x => x.id === capa), vs = Object.values(valores).filter(v => v != null && Number.isFinite(v));
     rango = [c?.min ?? (vs.length ? Math.min(...vs) : 0), c?.max ?? (vs.length ? Math.max(...vs) : 1)];
     $('#leyenda').innerHTML = `<div class="grad" style="background:linear-gradient(90deg,${ramp})"></div><div class="rango"><span>${esc(number(rango[0]))}</span><span>${esc(number(rango[1]))}</span></div><small>${esc(c?.unidad || '')}</small>`;
     refreshStyle();
     updateMapSummary();
-  } catch (error) { if (sequence === layerSequence) { $('#layers-error').textContent = error.message; $('#layers-error').hidden = false; } }
+  } catch (error) { if (sequence === layerSequence && !resultMap.enabled) { valueState.loading=false;valueState.error=error.message;$('#layers-error').textContent = error.message; $('#layers-error').hidden = false;renderParcelTable(); } }
 }
-$('#capa').onchange = $('#fecha').onchange = () => { disableResultMap(false); pintar(); };
+$('#capa').onchange = $('#fecha').onchange = () => { disableResultMap(false); return pintar(); };
 $('#info-button').onclick = () => { if (currentDashboard) requestExplanation(currentDashboard); };
 function vista(view) {
   $('#container').hidden = view !== 'mapa'; $('#tabla').hidden = view !== 'tabla'; $('#documentacion').hidden = view !== 'documentacion';
   document.querySelectorAll('.nav a[data-v]').forEach(a => a.classList.toggle('active', a.dataset.v === view));
   if (view === 'mapa') requestAnimationFrame(() => { map.invalidateSize(); ajustarLimites(); });
+  if (view === 'documentacion') window.DOCUMENTATION.open();
 }
 document.querySelectorAll('.nav a[data-v]').forEach(a => a.onclick = e => { e.preventDefault(); vista(a.dataset.v); });
 function irA(id) {
   if (!geo) return;
   if(predictionOnly && allParcels.features.some(f=>String(f.id)===id && f.properties.cohorte!=='prediccion')) updatePredictionFilter(false);
+  if(allParcels.features.some(f=>String(f.id)===id) && !visibleFeatures().some(f=>String(f.id)===id)) {parcelFilters.municipality='';parcelFilters.query='';drawParcels();}
   let found = false;
   geo.eachLayer(layer => {
     if (String(layer.feature.id) !== id) return;
@@ -171,10 +234,13 @@ async function init() {
     const fc = parcelResult.value;allParcels=fc;drawParcels();
     const predictionCount=fc.features.filter(f=>f.properties.cohorte==='prediccion').length;
     $('#prediction-filter').hidden=predictionCount===0;
-    $('#prediction-filter').textContent=`${predictionCount} parcelas`;
+    $('#prediction-filter').textContent='Parcelas de validación';
+    const municipalities=[...new Set(fc.features.map(f=>f.properties.municipio).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+    for(const prefix of ['map','table']) $('#'+prefix+'-municipality').innerHTML='<option value="">Todos los municipios</option>'+municipalities.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+    renderParcelTable();
     if (geo.getBounds().isValid()) { map.fitBounds(geo.getBounds()); ajustarLimites(); }
     $('#map-status').hidden = true;
-  } else { $('#map-status').textContent = `No se pudieron cargar las parcelas: ${parcelResult.reason.message}`; }
+  } else { valueState.parcelError=parcelResult.reason.message;$('#map-status').textContent = `No se pudieron cargar las parcelas: ${parcelResult.reason.message}`;renderParcelTable(); }
   if (layerResult.status === 'fulfilled') {
     capas = layerResult.value;
     const grupos = {}; capas.forEach(c => (grupos[c.grupo] ??= []).push(c));
@@ -182,7 +248,8 @@ async function init() {
       `<optgroup label="${esc(grupo)}">${lista.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('')}</optgroup>`).join(''));
     const initial=capas.find(c=>c.id===C.capaInicial) || capas.find(c=>c.nombre==='Elevación');
     if(initial) {$('#capa').value=initial.id;await pintar();}
-  } else { $('#layers-error').textContent = `No se pudieron cargar las capas: ${layerResult.reason.message}`; $('#layers-error').hidden = false; }
+    renderParcelTable();
+  } else { $('#layers-error').textContent = `No se pudieron cargar las capas: ${layerResult.reason.message}`; $('#layers-error').hidden = false;valueState.error=layerResult.reason.message;renderParcelTable(); }
 }
 function dashboardState(state, message = '') {
   $('#dashboard-loading').hidden = state !== 'loading';
@@ -200,18 +267,21 @@ async function selectParcel(id) {
   ++infoSequence; dashboardController?.abort(); infoController?.abort();
   dashboardController = new AbortController();
   $('#dashboard-data').replaceChildren(); clearExplanation();
+  $('#table-detail').hidden=false;$('#table-detail').textContent=`Cargando ficha de ${id}…`;
   dashboardState('loading', `Cargando parcela ${id}…`); refreshStyle();
   try {
     const selectors = resultMap.enabled ? `?${new URLSearchParams({'campaña':resultMap.dataset,version_modelo:resultMap.model})}` : '';
     const data = await json(`/api/parcelas/${encodeURIComponent(id)}/dashboard${selectors}`, { signal: dashboardController.signal });
     if (sequence !== dashboardSequence || selectedParcelId !== String(id)) return;
-    currentDashboard = data; updateDashboard(data);
+    currentDashboard = data; updateDashboard(data);$('#table-detail').innerHTML=window.PARCELS.detail(data);renderParcelTable();
   } catch (error) {
     if (sequence !== dashboardSequence || error.name === 'AbortError') return;
     dashboardState('error', `Parcela ${id}: ${error.message}`);
+    $('#table-detail').textContent=`Parcela ${id}: ${error.message}`;
   }
 }
 function clearSelection() {
+  $('#table-detail').hidden=true;$('#table-detail').replaceChildren();
   ++dashboardSequence; ++infoSequence; dashboardController?.abort(); infoController?.abort();
   selectedParcelId = null; currentDashboard = null; $('#dashboard-data').replaceChildren(); clearExplanation();
   dashboardState('instructions'); refreshStyle();
@@ -351,6 +421,7 @@ async function requestExplanation(context) {
 }
 async function activateResultMap() {
   resultMap.enabled=true;++layerSequence;
+  valores={};valueState.loading=true;valueState.error='';refreshStyle();
   $('#results-panel').hidden=false;$('#results-button').setAttribute('aria-expanded','true');
   $('#results-caption').textContent='Cargando conjuntos…';$('#results-error').hidden=true;toggleLayers(false);
   try {
@@ -368,7 +439,8 @@ async function activateResultMap() {
     await paintResultMap();
   } catch(error) {
     if(!resultMap.enabled) return;
-    $('#results-error').textContent=error.message;$('#results-error').hidden=false;$('#results-caption').textContent='Resultados no disponibles';
+    valueState.loading=false;valueState.error=error.message;renderParcelTable();
+    $('#results-error').textContent=error.message;$('#results-error').hidden=false;$('#results-caption').textContent='No se pudieron cargar los resultados';
   }
 }
 function updateResultMetrics() {
@@ -378,33 +450,36 @@ function updateResultMetrics() {
   if(!options.some(([key])=>key===resultMap.metric)) resultMap.metric=options[0]?.[0] || 'prediccion';
   $('#results-metric').innerHTML=options.map(([key,label])=>`<option value="${key}">${label}</option>`).join('');
   $('#results-metric').value=resultMap.metric;
+  syncTableControls();
 }
 function disableResultMap(restore=true) {
   const wasEnabled=resultMap.enabled;
   resultMap.enabled=false;++resultMap.sequence;resultMap.controller?.abort();
   $('#results-panel').hidden=true;$('#results-button').setAttribute('aria-expanded','false');
-  if(restore) pintar();
+  const restored=restore ? pintar() : null;
   updateMapSummary();
   if(wasEnabled && selectedParcelId) selectParcel(selectedParcelId);
+  return restored;
 }
 async function paintResultMap() {
   if(!resultMap.enabled || !resultMap.dataset || !resultMap.model) return;
   const sequence=++resultMap.sequence;
   resultMap.controller?.abort();resultMap.controller=new AbortController();
-  valores={};refreshStyle();$('#results-error').hidden=true;$('#results-legend').replaceChildren();
+  valores={};valueState.loading=true;valueState.error='';refreshStyle();$('#results-error').hidden=true;$('#results-legend').replaceChildren();
   $('#results-caption').textContent='Cargando valores…';
   if(selectedParcelId) selectParcel(selectedParcelId);
   const params=new URLSearchParams({'campaña':resultMap.dataset,version_modelo:resultMap.model,metrica:resultMap.metric});
   try {
     const data=await json(`/api/resultados/valores?${params}`,{signal:resultMap.controller.signal});
     if(!resultMap.enabled || sequence!==resultMap.sequence) return;
-    valores=data.valores;rango=data.rango;refreshStyle();
+    valores=data.valores;rango=data.rango;resultMap.unit=data.unidad;valueState.loading=false;refreshStyle();
     const count=visibleFeatures().filter(feature=>hasNumber(valores[feature.id])).length;
     $('#results-caption').textContent=`${count} parcelas con dato · ${data.unidad}`;
     $('#results-legend').innerHTML=`<div class="grad" style="background:linear-gradient(90deg,${ramp})"></div><div class="rango"><span>${number(rango[0])}</span><span>${number(rango[1])}</span></div><small>${esc(data.dataset_label)} · Gris: sin dato.</small>`;
     updateMapSummary();
   } catch(error) {
     if(!resultMap.enabled || sequence!==resultMap.sequence || error.name==='AbortError') return;
+    valueState.loading=false;valueState.error=error.message;renderParcelTable();
     $('#results-error').textContent=error.message;$('#results-error').hidden=false;$('#results-caption').textContent='No se pudieron cargar los valores';
   }
 }
@@ -412,9 +487,9 @@ $('#results-button').onclick=()=>resultMap.enabled ? disableResultMap() : activa
 $('#results-close').onclick=()=>disableResultMap();
 $('#results-set').onchange=e=>{
   const set=resultMap.sets[Number(e.target.value)];
-  resultMap.model=set.model;resultMap.dataset=set.campaña;updateResultMetrics();paintResultMap();
+  resultMap.model=set.model;resultMap.dataset=set.campaña;updateResultMetrics();return paintResultMap();
 };
-$('#results-metric').onchange=e=>{resultMap.metric=e.target.value;paintResultMap();};
+$('#results-metric').onchange=e=>{resultMap.metric=e.target.value;return paintResultMap();};
 for(const id of ['results-panel','results-button']) {
   L.DomEvent.disableClickPropagation($('#'+id));L.DomEvent.disableScrollPropagation($('#'+id));
 }

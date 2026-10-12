@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
+import {registerDocumentation} from './lib/documentation.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const finalPath = path.join(__dirname, 'db', 'parcelas_final.sqlite');
@@ -321,6 +322,7 @@ Distingue conceptos generales de hechos del contexto. Usa títulos sencillos y t
   } finally { clearTimeout(timeout); }
 }
 
+registerDocumentation(app,__dirname);
 app.use('/fuentes', express.static(path.join(__dirname, 'modelos', 'libretas_finales', 'Data')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.listen(PORT, () => console.log(`AgroCebada web en http://localhost:${PORT}`));

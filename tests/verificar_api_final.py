@@ -65,9 +65,28 @@ with tempfile.TemporaryDirectory() as tmp:
         try:urllib.request.urlopen(req,timeout=5);raise AssertionError('Se permitió escribir')
         except urllib.error.HTTPError as e:assert e.code==403
         with urllib.request.urlopen(base+'/fuentes/05_final/dashboard_parcelas_prediccion.csv',timeout=5) as r:assert len(r.read())>1000
+        docs=get('/api/documentacion')
+        assert len(docs['notebooks'])==4 and len(docs['fuentes'])==8
+        for notebook in docs['notebooks']:
+            original=json.loads((ROOT/'modelos/libretas_finales'/notebook['archivo']).read_text())
+            view=get(notebook['url'])
+            assert len(view['celdas'])==len(original['cells'])
+            for cell,source in zip(view['celdas'],original['cells']):
+                assert cell['fuente']==''.join(source['source'])
+                assert all(o['tipo']=='texto' or o['mime'] in ['image/png','image/jpeg'] for o in cell['salidas'])
+            with urllib.request.urlopen(base+notebook['descarga'],timeout=5) as r:
+                assert r.read()==(ROOT/'modelos/libretas_finales'/notebook['archivo']).read_bytes()
+        for source in docs['fuentes']:
+            with urllib.request.urlopen(base+source['descarga'],timeout=5) as r:assert r.read()==(ROOT/source['archivo']).read_bytes()
+        with urllib.request.urlopen(base+'/documentacion/archivos/reporte',timeout=5) as r:
+            assert r.read()==(ROOT/'modelos/libretas_finales/Reporte_Metodologico_AgroCebada_Final.docx').read_bytes()
+        for route in ['/api/documentacion/notebooks/desconocido','/documentacion/archivos/desconocido','/documentacion/archivos/%2e%2e%2fserver.js']:
+            try:urllib.request.urlopen(base+route);raise AssertionError('Se permitió un ID fuera de la lista')
+            except urllib.error.HTTPError as e:assert e.code==404
         print('API OK: salud, 197 geometrías, OOF/final, ausencias, SHAP parcial, validación, mapas, clima, mock, descargas y escritura bloqueada.')
         print('AGC_001 OOF:',ref['resultado']['prediccion'],'observado:',ref['resultado']['observado'])
         print('AGC_003 final:',pred['resultado']['prediccion'],'intervalo:',pred['contexto_modelo']['intervalo_empirico80']['inferior'],pred['contexto_modelo']['intervalo_empirico80']['superior'])
+        print('Documentación OK: cuatro libretas completas, descarga original, ocho fuentes, reporte y rutas limitadas por ID.')
     finally:
         process.terminate()
         process.communicate(timeout=5)

@@ -33,7 +33,10 @@ function parcel(id) {
 }
 let markup='',buttons=[],panels=[],elements=new Map();
 function node(id) {
-  return {id,innerHTML:'',hidden:false,attributes:{},dataset:{},setAttribute(key,value){this.attributes[key]=value;},focus(){this.focused=true;}};
+  return {id,innerHTML:'',value:'',hidden:false,attributes:{},dataset:{},classList:{toggle(){}},replaceChildren(){this.innerHTML='';},
+    get options(){return [...this.innerHTML.matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(m=>({value:m[1],textContent:m[2]}));},
+    get selectedOptions(){return this.options.filter(o=>o.value===this.value);},
+    setAttribute(key,value){this.attributes[key]=value;},focus(){this.focused=true;}};
 }
 const dashboard=node('dashboard-data');
 Object.defineProperty(dashboard,'innerHTML',{get:()=>markup,set:value=>{
@@ -84,17 +87,29 @@ assert(!markup.includes('data-chart-tab="aportes"'));
 assert(!markup.includes('data-chart-tab="modelo"'));
 assert(markup.includes('0.00'));
 assert(!markup.includes('metric-relative'));
-const controls=new Map(['prediction-filter','map-tools','administrative-borders','administrative-status','ids','t','map-summary','capa'].map(id=>['#'+id,node(id)]));
+const controls=new Map(['prediction-filter','map-tools','administrative-borders','administrative-status','ids','t','map-summary','capa','fecha','leyenda','layers-error','results-panel','results-button','results-close','results-set','results-metric','results-caption','results-error','results-legend','table-cohort','table-source','table-layer','table-date','table-set','table-metric','table-layer-label','table-date-label','table-set-label','table-metric-label','map-query','table-query','map-municipality','table-municipality','table-status','table-export','table-reset','table-detail'].map(id=>['#'+id,node(id)]));
 controls.get('#capa').value='final_Elevacion_INEGI_CEM4_120m_mean';
+controls.get('#capa').innerHTML='<option value="final_Elevacion_INEGI_CEM4_120m_mean">Elevación</option><option value="final_prec">Precipitación</option>';
+controls.get('#fecha').hidden=true;
 let layers=new Set(),borderRequests=0;
 const map={removeLayer(layer){layers.delete(layer);},createPane(){},getPane(){return {style:{}};}};
 const borderData=JSON.parse(readFileSync(new URL('../public/geografia/limites.geojson',import.meta.url),'utf8'));
-const mapScope={document:{querySelector:key=>controls.get(key)},C:{limitesAdministrativos:'geografia/limites.geojson'},
-  map,L:{DomEvent:{disableClickPropagation(){}},geoJSON(data,options){return {features:data.features,options,addTo(){layers.add(this);return this;}};}},
-  fixture,console,json:async()=>{borderRequests++;return borderData;},P:scope.window.PRESENTATION};
+const mapScope={window:{PRESENTATION:scope.window.PRESENTATION},document:{querySelector:key=>controls.get(key)},C:{limitesAdministrativos:'geografia/limites.geojson'},
+  map,L:{DomEvent:{disableClickPropagation(){},disableScrollPropagation(){}},geoJSON(data,options){return {features:data.features,options,addTo(){layers.add(this);return this;}};}},
+  fixture,console,AbortController,URLSearchParams,json:async url=>{
+    if(url==='geografia/limites.geojson') {borderRequests++;return borderData;}
+    if(url==='/api/resultados/campanas') return {modelos:[{version_modelo:'modelo-final',campanas:[{campaña:'final',label:'Final',dataset_id:'final',metricas_disponibles:{prediccion:true,observado:true,error_firmado_t_ha:true,error_absoluto_t_ha:true}}]}]};
+    if(url.startsWith('/api/resultados/valores')) return {valores:{AGC_001:3.049,AGC_003:3.503},rango:[3,4],unidad:'t/ha',dataset_label:'Final'};
+    if(url.endsWith('/fechas')) return ['2025-04','2025-05'];
+    if(url.includes('/valores?')) return {valores:{AGC_001:21,AGC_003:30}};
+    throw Error(url);
+  },P:scope.window.PRESENTATION};
 vm.createContext(mapScope);
+vm.runInContext(readFileSync(new URL('../public/parcels.js',import.meta.url),'utf8'),mapScope);
 const mapFunctions=source.slice(source.indexOf('function visibleFeatures('),source.indexOf('async function json('));
-vm.runInContext(`const $=s=>document.querySelector(s),hasNumber=P.hasNumber,esc=v=>String(v??'');let allParcels={type:'FeatureCollection',features:fixture.features},geo,predictionOnly=false,administrativeLayer=null,administrativePromise=null,selectedParcelId='AGC_001';const resultMap={enabled:false};const capas=[{id:'final_Elevacion_INEGI_CEM4_120m_mean',nombre:'Elevación'}];function estilo(){}function selectParcel(){}function clearSelection(){selectedParcelId=null;}function irA(){};${mapFunctions}`,mapScope);
+vm.runInContext(`const $=s=>document.querySelector(s),hasNumber=P.hasNumber,esc=v=>String(v??''),number=(v,d=2)=>Number(v).toFixed(d);let allParcels={type:'FeatureCollection',features:fixture.features},geo,predictionOnly=false,administrativeLayer=null,administrativePromise=null,selectedParcelId='AGC_001';let valores={},rango=[0,1],layerSequence=0,resultCataloguePromise=null,currentDashboard=null;const parcelFilters={municipality:'',query:''},tableSort={key:'id',direction:'asc'},valueState={loading:false,error:''},ramp=['red','blue'];const resultMap={enabled:false,model:null,dataset:null,metric:'prediccion',sets:[],sequence:0,controller:null};const capas=[{id:'final_Elevacion_INEGI_CEM4_120m_mean',nombre:'Elevación',unidad:'m'},{id:'final_prec',nombre:'Precipitación',unidad:'mm'}];let mapVisits=0;function estilo(){}function refreshStyle(){renderParcelTable();}function selectParcel(id){selectedParcelId=id;}function clearSelection(){selectedParcelId=null;}function irA(){mapVisits++;}function toggleLayers(){};${mapFunctions}`,mapScope);
+vm.runInContext(source.slice(source.indexOf('async function pintar('),source.indexOf("$('#info-button').onclick")),mapScope);
+vm.runInContext(source.slice(source.indexOf('async function activateResultMap('),source.indexOf('init().catch(')),mapScope);
 vm.runInContext('updatePredictionFilter(true)',mapScope);
 assert.equal(vm.runInContext('geo.features.length',mapScope),59);
 assert.equal(vm.runInContext('selectedParcelId',mapScope),null);
@@ -103,6 +118,37 @@ assert.equal((controls.get('#t').innerHTML.match(/<tr data-id=/g)||[]).length,59
 assert(controls.get('#map-summary').innerHTML.includes('Elevación'));
 vm.runInContext('updatePredictionFilter(false)',mapScope);
 assert.equal(vm.runInContext('geo.features.length',mapScope),197);
+controls.get('#table-query').oninput({target:{value:'agc_003'}});
+assert.equal(vm.runInContext('geo.features.length',mapScope),1);
+assert.equal(controls.get('#map-query').value,'agc_003');
+controls.get('#table-reset').onclick();
+controls.get('#map-municipality').onchange({target:{value:'Singuilucan'}});
+assert.equal(vm.runInContext('geo.features.length',mapScope),23);
+assert.equal(controls.get('#table-municipality').value,'Singuilucan');
+controls.get('#table-reset').onclick();
+controls.get('#t').onclick({target:{closest:selector=>selector==='[data-parcel]' ? {dataset:{parcel:'AGC_003'}} : null}});
+assert.equal(vm.runInContext('selectedParcelId',mapScope),'AGC_003');
+assert.equal(vm.runInContext('mapVisits',mapScope),0,'Abrir una fila mantiene la vista de tablas');
+await controls.get('#table-layer').onchange({target:{value:'final_prec'}});
+assert.equal(controls.get('#capa').value,'final_prec');
+assert.equal(controls.get('#table-date').value,'2025-05');
+assert.equal(controls.get('#table-date-label').hidden,false);
+await controls.get('#table-date').onchange({target:{value:'2025-04'}});
+assert.equal(controls.get('#fecha').value,'2025-04');
+await controls.get('#table-source').onchange({target:{value:'resultados'}});
+assert.equal(vm.runInContext('resultMap.enabled',mapScope),true);
+assert.equal(controls.get('#table-set').value,controls.get('#results-set').value);
+await controls.get('#table-metric').onchange({target:{value:'observado'}});
+assert.equal(vm.runInContext('resultMap.metric',mapScope),'observado');
+vm.runInContext('updatePredictionFilter(true)',mapScope);
+assert.equal(controls.get('#table-metric').options.length,1);
+assert.equal(vm.runInContext('resultMap.metric',mapScope),'prediccion');
+await vm.runInContext('paintResultMap()',mapScope);
+assert.equal(controls.get('#table-cohort').attributes['aria-pressed'],'true');
+assert.equal((controls.get('#t').innerHTML.match(/<tr data-id=/g)||[]).length,59);
+await controls.get('#table-source').onchange({target:{value:'capas'}});
+assert.equal(vm.runInContext('resultMap.enabled',mapScope),false);
+assert.equal(controls.get('#table-layer').value,'final_prec');
 const borderControl=controls.get('#administrative-borders');
 borderControl.checked=true;await borderControl.onchange({target:borderControl});
 assert.equal(borderRequests,1);
@@ -114,3 +160,4 @@ borderControl.checked=true;await borderControl.onchange({target:borderControl});
 assert.equal(borderRequests,1);
 console.log('Dashboard OK: controles y tablas condicionales, cambio de parcela, cero real, etiquetas, gráfica sin barra ausente y teclado.');
 console.log('Mapa OK: 59/197 parcelas, tabla y selección coherentes, activar/ocultar límites, caché y capa administrativa sin capturar clics.');
+console.log('Tabla OK: búsqueda, municipio, capa, periodo, conjunto y métrica sincronizados; ficha sin navegar; errores ocultos en las 59 finales.');
