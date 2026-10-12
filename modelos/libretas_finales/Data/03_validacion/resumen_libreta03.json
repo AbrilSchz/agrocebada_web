@@ -1,0 +1,77 @@
+{
+  "version": "3.1-validacion-robusta-corregida",
+  "n_parcelas_evaluadas": 138,
+  "esquemas_validacion": [
+    "RepeatedKFold",
+    "GroupKFold_CHIRPS",
+    "LOGO_Municipio"
+  ],
+  "n_celdas_chirps": 23,
+  "n_municipios": 9,
+  "modelos_evaluados": [
+    "Dummy",
+    "KNN_Espacial",
+    "HGB_agronomico",
+    "HGB_final",
+    "Ensamble_50_50"
+  ],
+  "bloques_ablacion": {
+    "suelo_termico": 7,
+    "vegetacion": 9,
+    "fenologia": 135,
+    "agua": 3,
+    "topografia": 2,
+    "clima": 21,
+    "fisica": 9,
+    "area": 1
+  },
+  "parametros": {
+    "knn": {
+      "n_neighbors": 5,
+      "weights": "distance"
+    },
+    "hgb_agronomico": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 7,
+      "min_samples_leaf": 10,
+      "l2_regularization": 10.0,
+      "random_state": 999
+    },
+    "hgb_final": {
+      "learning_rate": 0.06,
+      "max_leaf_nodes": 15,
+      "min_samples_leaf": 5,
+      "l2_regularization": 8.0,
+      "random_state": 2026
+    },
+    "k_vars": 20,
+    "forzar_coordenadas": true,
+    "repeated_kfold": [
+      5,
+      3
+    ],
+    "semilla_cv": 999
+  },
+  "veredicto": {
+    "regla_decision": {
+      "tolerancia_t_ha": 0.02,
+      "diff_ensamble_vs_knn": 0.0024913003088029924,
+      "sd_folds": 0.030826915244066704,
+      "cumple": true
+    },
+    "hgb_agronomico_vs_knn_RepeatedKFold": {
+      "diff": -0.009575088326047903,
+      "sd": 0.0550639607178886,
+      "lectura": "diferencia no detectable"
+    },
+    "hgb_agronomico_vs_knn_LOGO_Municipio": {
+      "diff": -0.19318820037313314,
+      "sd": 0.30344417626020764,
+      "lectura": "diferencia no detectable"
+    },
+    "r2_residuos_max": -0.01638428503969247,
+    "ablacion_bloques_detectables_RepeatedKFold": "Sin_fenologia (+0.028)",
+    "ablacion_bloques_detectables_LOGO_Municipio": "Sin_clima (+0.406)"
+  },
+  "alcance": "retrospectivo; solo 138 parcelas etiquetadas; una sola temporada (2025)"
+}

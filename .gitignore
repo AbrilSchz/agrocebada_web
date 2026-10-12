@@ -12,8 +12,10 @@ db/parcelas_demo.sqlite
 db/parcelas_demo.sqlite.*
 db/parcelas_modelo.sqlite
 db/parcelas_modelo.sqlite.*
+db/parcelas_final.sqlite.*
 db/*.backup-*
 __pycache__/
 db/*.tmp-*
+
 
 

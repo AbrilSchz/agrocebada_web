@@ -1,0 +1,52 @@
+{
+  "q1_indice": {
+    "top_por_shap": "dswi4 (SHAP agrupado 0.055 ± 0.030; ΔMAE por permutación +0.0061 ± 0.0143); dswi3 (SHAP agrupado 0.044 ± 0.022; ΔMAE por permutación +0.0062 ± 0.0076); srndi (SHAP agrupado 0.043 ± 0.018; ΔMAE por permutación -0.0002 ± 0.0128)",
+    "top_por_permutacion_grupal": "ndti (SHAP agrupado 0.038 ± 0.011; ΔMAE por permutación +0.0066 ± 0.0108); dswi3 (SHAP agrupado 0.044 ± 0.022; ΔMAE por permutación +0.0062 ± 0.0076); dswi4 (SHAP agrupado 0.055 ± 0.030; ΔMAE por permutación +0.0061 ± 0.0143)",
+    "coinciden_en_el_primero": false,
+    "advertencias": [
+      "Orden preliminar: la variabilidad entre folds es comparable a las diferencias entre índices.",
+      "Verificar la tabla de correlación con ubicación (posible proxy territorial).",
+      "Los índices del mismo sensor comparten información; SHAP reparte importancia entre colineales."
+    ]
+  },
+  "q2_clima": {
+    "por_variable": "PREC (SHAP agrupado 0.581 ± 0.029; ΔMAE por permutación +0.4191 ± 0.0620); Tmax (SHAP agrupado 0.007 ± 0.008; ΔMAE por permutación +0.0003 ± 0.0054); Tmin (SHAP agrupado 0.004 ± 0.008; ΔMAE por permutación -0.0009 ± 0.0045)",
+    "por_mes": "05 (SHAP agrupado 0.578 ± 0.030; ΔMAE por permutación +0.4236 ± 0.0884); 04 (SHAP agrupado 0.006 ± 0.007; ΔMAE por permutación +0.0003 ± 0.0037); 06 (SHAP agrupado 0.003 ± 0.008; ΔMAE por permutación -0.0011 ± 0.0041)",
+    "advertencias": [
+      "CHIRPS/CHIRTS tienen ~5 km: parcelas vecinas reciben valores casi idénticos; poca variación entre parcelas no implica que el clima no afecte el rendimiento.",
+      "Las 21 columnas mensuales son muy colineales entre sí (y con la elevación); interpretar por variable, no por columna."
+    ]
+  },
+  "q3_combinacion": {
+    "mejor_modelo_por_esquema": {
+      "RepeatedKFold": "HGB_agronomico (MAE por fold 0.361 ± 0.073)",
+      "GroupKFold_CHIRPS": "KNN_Espacial (MAE por fold 0.375 ± 0.039)",
+      "LOGO_Municipio": "HGB_agronomico (MAE por fold 0.276 ± 0.173)"
+    },
+    "ablacion_efectos_detectables": {
+      "RepeatedKFold": [
+        "Solo_suelo_termico: empeora (+0.273 ± 0.069)",
+        "Solo_vegetacion: empeora (+0.275 ± 0.084)",
+        "Sin_fenologia: empeora (+0.028 ± 0.026)",
+        "Solo_fenologia: empeora (+0.124 ± 0.064)",
+        "Solo_agua: empeora (+0.361 ± 0.090)",
+        "Solo_topografia: empeora (+0.216 ± 0.066)",
+        "Solo_area: empeora (+0.302 ± 0.076)"
+      ],
+      "LOGO_Municipio": [
+        "Solo_suelo_termico: empeora (+0.531 ± 0.509)",
+        "Solo_vegetacion: empeora (+0.486 ± 0.318)",
+        "Solo_fenologia: empeora (+0.350 ± 0.277)",
+        "Solo_agua: empeora (+0.612 ± 0.263)",
+        "Solo_topografia: empeora (+0.513 ± 0.349)",
+        "Sin_clima: empeora (+0.406 ± 0.283)",
+        "Solo_fisica: empeora (+0.337 ± 0.240)",
+        "Solo_area: empeora (+0.492 ± 0.250)"
+      ]
+    },
+    "advertencias": [
+      "Las diferencias pequeñas frente a la variabilidad entre folds se describen como 'no detectables', no como 'iguales'.",
+      "Con 138 parcelas el poder para detectar mejoras pequeñas es bajo."
+    ]
+  }
+}

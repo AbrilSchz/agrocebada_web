@@ -1,0 +1,21 @@
+{
+  "regla_decision": {
+    "tolerancia_t_ha": 0.02,
+    "diff_ensamble_vs_knn": 0.0024913003088029924,
+    "sd_folds": 0.030826915244066704,
+    "cumple": true
+  },
+  "hgb_agronomico_vs_knn_RepeatedKFold": {
+    "diff": -0.009575088326047903,
+    "sd": 0.0550639607178886,
+    "lectura": "diferencia no detectable"
+  },
+  "hgb_agronomico_vs_knn_LOGO_Municipio": {
+    "diff": -0.19318820037313314,
+    "sd": 0.30344417626020764,
+    "lectura": "diferencia no detectable"
+  },
+  "r2_residuos_max": -0.01638428503969247,
+  "ablacion_bloques_detectables_RepeatedKFold": "Sin_fenologia (+0.028)",
+  "ablacion_bloques_detectables_LOGO_Municipio": "Sin_clima (+0.406)"
+}

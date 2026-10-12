@@ -1,0 +1,80 @@
+{
+  "parcelas": {
+    "total": 197,
+    "entrenamiento": 138,
+    "prediccion": 59,
+    "por_estado": {
+      "Hidalgo": 51,
+      "Puebla": 100,
+      "Tlaxcala": 46
+    },
+    "area_total_ha": 1301.05,
+    "area_mediana_ha": 5.46,
+    "area_min_ha": 0.35,
+    "area_max_ha": 64.3
+  },
+  "cobertura_parcelas_por_mes": {
+    "basico": {
+      "Landsat": {
+        "2025-04": 197,
+        "2025-05": 197,
+        "2025-06": 197,
+        "2025-07": 197,
+        "2025-08": 197,
+        "2025-09": 197,
+        "2025-10": 197
+      },
+      "Sentinel-2": {
+        "2025-04": 197,
+        "2025-05": 197,
+        "2025-06": 197,
+        "2025-07": 197,
+        "2025-08": 197,
+        "2025-09": 197,
+        "2025-10": 197
+      }
+    },
+    "pro": {
+      "Planet": {
+        "2025-04": 197,
+        "2025-05": 197,
+        "2025-06": 197,
+        "2025-07": 197,
+        "2025-08": 197,
+        "2025-09": 197,
+        "2025-10": 197
+      }
+    }
+  },
+  "nubosidad": {
+    "basico": {
+      "media": 34.8,
+      "mediana": 0.0,
+      "pct_desconocida": 2.7,
+      "pct_menor_igual_20": 60.5
+    },
+    "pro": {
+      "media": 36.6,
+      "mediana": 0.0,
+      "pct_desconocida": 0.0,
+      "pct_menor_igual_20": 60.4
+    }
+  },
+  "faltantes_top5": {
+    "basico": {
+      "vi6t_min": 75.8,
+      "vi6t_max": 75.8,
+      "vi6t_std": 75.8,
+      "vi6t_promedio": 75.8,
+      "evi_promedio": 54.9
+    },
+    "pro": {
+      "ndvi_promedio": 30.5,
+      "ndvi_std": 30.5,
+      "ndvi_max": 30.5,
+      "ndvi_min": 30.5,
+      "evi_promedio": 30.5
+    }
+  },
+  "inconsistencias_min_prom_max": 0
+}
