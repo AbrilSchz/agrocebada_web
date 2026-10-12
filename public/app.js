@@ -13,11 +13,15 @@ map.on('resize', ajustarLimites);
 ajustarLimites();
 const resizeObserver = new ResizeObserver(() => { if (!$('#container').hidden) map.invalidateSize(); });
 resizeObserver.observe($('#map'));
-let base = L.tileLayer(C.bases.calles.url, { attribution: C.bases.calles.attribution, maxZoom: 19 }).addTo(map);
-document.querySelectorAll('[name=base]').forEach(r => r.onchange = () => {
-  map.removeLayer(base);
-  const b = C.bases[r.value];
-  base = L.tileLayer(b.url, { attribution: b.attribution, maxZoom: 19 }).addTo(map).bringToBack();
+const baseInicial = C.baseInicial || 'sat', fondoInicial = C.bases[baseInicial];
+let base = L.tileLayer(fondoInicial.url, { attribution: fondoInicial.attribution, maxZoom: 19 }).addTo(map);
+document.querySelectorAll('[name=base]').forEach(r => {
+  r.checked = r.value === baseInicial;
+  r.onchange = () => {
+    map.removeLayer(base);
+    const b = C.bases[r.value];
+    base = L.tileLayer(b.url, { attribution: b.attribution, maxZoom: 19 }).addTo(map).bringToBack();
+  };
 });
 let activeChart = 'rendimiento';
 const resultMap = {enabled:false,model:null,dataset:null,metric:'prediccion',sets:[],sequence:0,controller:null};
@@ -172,35 +176,56 @@ function showChart(name, focus = false) {
 }
 function updateDashboard(data) {
   const r = data.resultado, m = data.metricas, unidad = data.unidad_rendimiento;
+  const ctx=data.contexto_modelo, interval=ctx?.intervalo_empirico80;
   const label = data.dataset.label;
   const metric = (name, value, unit = unidad) => `<div class="metric"><span class="metric-label">${esc(name)}</span><strong class="metric-value">${number(value)}${value == null ? '' : ' ' + esc(unit)}</strong></div>`;
   $('#dashboard-data').innerHTML = `<div class="dashboard-heading"><h1>Parcela ${esc(data.ID_POLIGONO)}</h1><span class="dataset-label">${esc(label)}</span></div>
-    <p class="parcel-meta">Modelo ${esc(data.version_modelo)} · Predicción ${esc(r.tipo_prediccion || 'desconocida')}<br>Coordenadas: ${number(data.referencia.latitud_ref, 5)}, ${number(data.referencia.longitud_ref, 5)}</p>
+    <p class="parcel-meta">${ctx ? `${esc(ctx.municipio)} · ${ctx.cohorte==='referencia' ? 'Parcela con rendimiento observado' : 'Parcela de predicción final'}<br>` : ''}Modelo ${esc(data.version_modelo)} · Predicción ${esc(r.tipo_prediccion || 'desconocida')}<br>Punto de referencia del mapa: ${number(data.referencia.latitud_ref, 5)}, ${number(data.referencia.longitud_ref, 5)}</p>
     <div class="metrics">${metric('Predicción', r.prediccion)}${metric('Observado', r.observado)}${metric('Error firmado', m.error_firmado_t_ha)}${metric('Error absoluto', m.error_absoluto_t_ha)}${metric('Error relativo', m.error_relativo_pct, '%')}</div>
-    <p class="parcel-meta">Rendimiento cerrado por parcela. Validación del modelo pendiente de confirmar.</p>
+    <p class="parcel-meta">Rendimiento cerrado por parcela. ${r.esquema_oof ? `${esc(r.esquema_oof)}: ${esc(r.agregacion_oof)}.` : ctx ? 'Predicción final: no hay observado para calcular errores.' : 'Validación del modelo pendiente de confirmar.'}</p>
+    ${ctx?.componentes ? `<div class="model-context"><h3>Componentes del ensamble</h3><p>50 % KNN (${number(ctx.componentes.knn)} t/ha) + 50 % HGB (${number(ctx.componentes.hgb)} t/ha).</p><small>${esc(ctx.componentes.alcance)}</small></div>` : ''}
+    ${interval ? `<div class="model-context"><h3>Intervalo empírico nominal 80 %</h3><p class="interval-value">${number(interval.inferior)} – ${number(interval.superior)} t/ha</p><p>Vecino más cercano: ${number(interval.distancia_referencia_m,0)} m · Umbral de referencias: ${number(interval.umbral_referencia_m,0)} m.</p><small>Se basa en errores de validación. No garantiza cobertura en esta parcela ni es un intervalo de confianza formal.</small></div>` : ''}
+    ${ctx?.vecinos_referencia?.length ? `<details class="data-details"><summary>Referencias vecinas exportadas</summary><p>Son las tres referencias más cercanas por distancia haversine; KNN usa cinco vecinos y coordenadas escaladas.</p><div class="table-wrap"><table><thead><tr><th>Parcela</th><th>Distancia (m)</th><th>Observado (t/ha)</th></tr></thead><tbody>${ctx.vecinos_referencia.map(n=>`<tr><td><button type="button" class="parcel-link" data-neighbor-id="${esc(n.ID_POLIGONO)}">${esc(n.ID_POLIGONO)}</button></td><td>${number(n.distancia_m,0)}</td><td>${number(n.observado)}</td></tr>`).join('')}</tbody></table></div></details>` : ''}
     <div class="chart-context"><span>Explora tus resultados</span><span>Conjunto: ${esc(data.dataset.id || data.campaña)}</span></div>
     <div class="charts-shell">
       <div class="chart-tabs" role="tablist" aria-label="Gráficas de la parcela">
         <button id="tab-rendimiento" type="button" role="tab" data-chart-tab="rendimiento" aria-controls="panel-rendimiento">Rendimiento</button>
         <button id="tab-errores" type="button" role="tab" data-chart-tab="errores" aria-controls="panel-errores">Errores</button>
         <button id="tab-aportes" type="button" role="tab" data-chart-tab="aportes" aria-controls="panel-aportes">Aportes</button>
+        <button id="tab-modelo" type="button" role="tab" data-chart-tab="modelo" aria-controls="panel-modelo">Modelo</button>
       </div>
-      <div id="panel-rendimiento" class="chart" role="tabpanel" data-chart-panel="rendimiento" aria-labelledby="tab-rendimiento"><h3>Rendimiento de esta parcela</h3><div id="chart1"></div><small>${esc(label)} · ${esc(unidad)}. Comparación preliminar entre predicción y observado.</small></div>
+      <div id="panel-rendimiento" class="chart" role="tabpanel" data-chart-panel="rendimiento" aria-labelledby="tab-rendimiento"><h3>Rendimiento de esta parcela</h3><div id="chart1"></div><small>${esc(label)} · ${esc(unidad)}. ${ctx?.cohorte==='prediccion' ? 'Predicción final; rendimiento observado no disponible.' : r.tipo_prediccion==='oof' ? 'Comparación entre predicción OOF y observado.' : 'Comparación entre predicción y observado.'}</small></div>
       <div id="panel-errores" class="chart" role="tabpanel" data-chart-panel="errores" aria-labelledby="tab-errores" hidden><h3>Error de esta parcela</h3><div id="chart2"></div><small>Predicción menos observado (${esc(unidad)}). Positivo: sobreestimación; negativo: subestimación.</small></div>
       <div id="panel-aportes" class="chart" role="tabpanel" data-chart-panel="aportes" aria-labelledby="tab-aportes" hidden><h3>Contribuciones locales</h3><div id="chart3"></div><small>${esc(label)} · Los aportes no prueban causalidad.</small></div>
+      <div id="panel-modelo" class="chart" role="tabpanel" data-chart-panel="modelo" aria-labelledby="tab-modelo" hidden>${modelPanel(data)}</div>
     </div>
     <details class="data-details"><summary>Variables de la explicación</summary><div class="table-wrap"><table><thead><tr><th>Variable</th><th>Valor</th><th>Unidad</th><th>Aporte (${esc(unidad)})</th></tr></thead><tbody>${data.contribuciones.map(c => `<tr><td>${esc(c.variable)}</td><td>${number(c.valor)}</td><td>${esc(c.unidad)}</td><td>${number(c.aporte_t_ha)}</td></tr>`).join('') || '<tr><td colspan="4">No hay aportes confirmados para la predicción mostrada.</td></tr>'}</tbody></table></div></details>
     <details class="data-details"><summary>Valores existentes en la base</summary><div class="table-wrap"><table><thead><tr><th>Capa</th><th>Fecha</th><th>Valor</th><th>Unidad</th></tr></thead><tbody>${data.mediciones_existentes.map(x => `<tr><td>${esc(x.capa || x.capa_id)}</td><td>${esc(x.fecha)}</td><td>${number(x.valor, 3)}</td><td>${esc(x.unidad)}</td></tr>`).join('') || '<tr><td colspan="4">Sin valores disponibles.</td></tr>'}</tbody></table></div></details>`;
   renderChart1(data); renderChart2(data); renderChart3(data);
+  document.querySelectorAll('[data-neighbor-id]').forEach(button=>button.onclick=()=>irA(button.dataset.neighborId));
   showChart(activeChart); dashboardState('data');
   document.querySelectorAll('[data-chart-tab]').forEach(button => {
     button.onclick=() => showChart(button.dataset.chartTab);
     button.onkeydown=e => {
-      const tabs=['rendimiento','errores','aportes'],index=tabs.indexOf(activeChart);
-      const next=e.key==='ArrowRight' ? (index+1)%3 : e.key==='ArrowLeft' ? (index+2)%3 : e.key==='Home' ? 0 : e.key==='End' ? 2 : null;
+      const tabs=['rendimiento','errores','aportes','modelo'],index=tabs.indexOf(activeChart);
+      const next=e.key==='ArrowRight' ? (index+1)%tabs.length : e.key==='ArrowLeft' ? (index+tabs.length-1)%tabs.length : e.key==='Home' ? 0 : e.key==='End' ? tabs.length-1 : null;
       if (next!=null) { e.preventDefault();showChart(tabs[next],true); }
     };
   });
+}
+function modelPanel(data) {
+  const model=data.modelo,ctx=data.contexto_modelo;
+  if (!model) return '<h3>Evaluación del modelo</h3><p>No se recibió un resumen de validación para este conjunto.</p>';
+  const validation=model.validacion.filter(r=>r.modelo==='Ensamble_50_50');
+  const importances=model.importancias_globales, max=Math.max(.001,...importances.map(r=>r.shap_media));
+  return `<h3>Validación reportada del ensamble</h3><p>Evaluación sobre ${model.entrenamiento} parcelas con observado. Las métricas provienen de los CSV recibidos.</p>
+    <div class="table-wrap"><table><thead><tr><th>Esquema</th><th>MAE pooled (t/ha)</th><th>RMSE pooled (t/ha)</th><th>R² pooled</th><th>MAE por fold ± DE</th></tr></thead><tbody>${validation.map(r=>`<tr><td>${esc(r.esquema)}</td><td>${number(r.MAE_pooled,3)}</td><td>${number(r.RMSE_pooled,3)}</td><td>${number(r.R2_pooled,3)}</td><td>${number(r.MAE_fold_media,3)} ± ${number(r.MAE_fold_sd,3)}</td></tr>`).join('')}</tbody></table></div>
+    <p>Pooled pondera las parcelas; la media por fold da el mismo peso a cada fold. En LOGO un fold es un municipio. Estas métricas no son el error individual de la parcela.</p>
+    ${ctx?.validacion_parcela?.length ? `<h3>Esta parcela bajo cada esquema OOF</h3><div class="table-wrap"><table><thead><tr><th>Esquema</th><th>Predicción (t/ha)</th><th>Error firmado (t/ha)</th></tr></thead><tbody>${ctx.validacion_parcela.map(r=>`<tr><td>${esc(r.esquema)}</td><td>${number(r.prediccion)}</td><td>${number(r.error_firmado_t_ha)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    <h3>Importancia global: media de |SHAP|</h3><p>${esc(model.modelo_importancias)}. Diez variables principales. Son importancias del conjunto, no aportes firmados de esta parcela.</p>
+    <div class="importance-list">${importances.map(r=>`<div class="importance-row"><span>${esc(r.variable)}</span><div class="importance-track"><div style="width:${100*r.shap_media/max}%"></div></div><small>${number(r.shap_media,3)} ± ${number(r.shap_sd,3)} t/ha</small></div>`).join('')}</div>
+    <details class="data-details"><summary>Limitaciones y alcance</summary><ul>${model.limitaciones.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></details>
+    ${ctx?.variables_modelo ? `<details class="data-details"><summary>${Object.keys(ctx.variables_modelo).length} variables precalculadas de esta parcela</summary><p>Valores originales de X_integrado_completo.csv. Sus unidades y agregaciones se describen en el README; el nombre de la variable conserva su bloque y fuente.</p><div class="table-wrap"><table><thead><tr><th>Variable</th><th>Valor</th></tr></thead><tbody>${Object.entries(ctx.variables_modelo).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${number(v,4)}</td></tr>`).join('')}</tbody></table></div></details>` : ''}`;
 }
 function svgChart(content, height = 190) { return `<svg viewBox="0 0 460 ${height}" role="img" aria-label="Gráfica de resultados">${content}</svg>`; }
 function renderChart1(data) {
@@ -229,10 +254,11 @@ function renderChart2(data) {
   $('#chart2').innerHTML=svgChart(svg,155);
 }
 function renderChart3(data) {
-  const rows = data.contribuciones;
+  const partial=data.contexto_modelo?.shap_hgb_parcial?.length ? data.contexto_modelo.shap_hgb_parcial : null;
+  const rows = partial ? partial.map(c=>({variable:c.variable,aporte_t_ha:c.aporte_redondeado_t_ha})) : data.contribuciones;
   if (!rows.length) {
     const status=data.explicabilidad?.estado;
-    $('#chart3').innerHTML=status==='incoherente' ? '<p>Los SHAP recibidos no reconstruyen la predicción mostrada. Explicación pendiente de corregir.</p>' : '<p>Explicación SHAP pendiente: falta confirmar el modelo y la predicción que explican los aportes.</p>';
+    $('#chart3').innerHTML=status==='incoherente' ? '<p>Los SHAP recibidos no reconstruyen la predicción mostrada. Explicación pendiente de corregir.</p>' : data.modelo ? '<p>No se exportó una explicación SHAP completa para esta predicción OOF. Consulta Modelo para las importancias globales.</p>' : '<p>Explicación SHAP pendiente: falta confirmar el modelo y la predicción que explican los aportes.</p>';
     return;
   }
   const max = Math.max(.01, ...rows.map(c => Math.abs(c.aporte_t_ha))), height = rows.length * 36 + 40, zero = 310;
@@ -241,7 +267,7 @@ function renderChart3(data) {
     const width = Math.abs(c.aporte_t_ha) * 96 / max, y = i * 36 + 10;
     svg += `<text x="195" y="${y+16}" text-anchor="end" font-size="11">${esc(c.variable)}</text><rect x="${c.aporte_t_ha >= 0 ? zero : zero-width}" y="${y}" width="${width}" height="22" fill="${c.aporte_t_ha >= 0 ? '#21918c' : '#3b528b'}"><title>${number(c.aporte_t_ha)} ${esc(data.unidad_rendimiento)}</title></rect><text x="448" y="${y+16}" text-anchor="end" font-size="10">${number(c.aporte_t_ha)}</text>`;
   });
-  $('#chart3').innerHTML = svgChart(svg, height) + `<p>Valor base: ${number(data.resultado.valor_base_t_ha)} · Predicción: ${number(data.resultado.prediccion)} ${esc(data.unidad_rendimiento)}</p>`;
+  $('#chart3').innerHTML = (partial ? `<h4>Componente HGB final: tres aportes redondeados</h4><p>Predicción del componente HGB: ${number(data.contexto_modelo.componentes.hgb)} t/ha. No se recibió la base ni el resto de aportes. Estas barras no reconstruyen la predicción del ensamble.</p>` : '') + svgChart(svg, height) + (partial ? '' : `<p>Valor base: ${number(data.resultado.valor_base_t_ha)} · Predicción: ${number(data.resultado.prediccion)} ${esc(data.unidad_rendimiento)}</p>`);
 }
 async function requestExplanation(context) {
   const parcelId = context.ID_POLIGONO, selectedSequence = dashboardSequence, sequence = ++infoSequence;
@@ -321,4 +347,5 @@ for(const id of ['results-panel','results-button']) {
   L.DomEvent.disableClickPropagation($('#'+id));L.DomEvent.disableScrollPropagation($('#'+id));
 }
 init().catch(error => { $('#map-status').textContent = error.message; $('#map-status').hidden = false; });
+
 

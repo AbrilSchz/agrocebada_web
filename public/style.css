@@ -50,3 +50,6 @@ main{flex:1;min-height:0;display:flex}#container{flex:1;display:flex;min-width:0
 
 
 #results-caption,#results-legend small{font-size:11px;color:var(--muted)}
+
+/* Contexto del modelo y evaluación de los artefactos finales. */
+.model-context{padding:16px;margin:14px 0;background:#f3f6f0;border:1px solid #dce6d5;border-radius:14px}.model-context h3{margin:0 0 8px}.model-context p{margin:8px 0}.interval-value{font-size:24px;font-weight:700}.parcel-link{border:0;background:transparent;color:#245f3c;text-decoration:underline;cursor:pointer;padding:6px 0}.importance-list{display:grid;gap:12px;margin:16px 0}.importance-row{display:grid;gap:4px}.importance-row>span{font-size:12px;overflow-wrap:anywhere}.importance-track{height:12px;border-radius:6px;background:#eef0e8;overflow:hidden}.importance-track>div{height:100%;background:#3b528b;border-radius:6px}.importance-row small{color:#53634e}.table-wrap td{overflow-wrap:anywhere}#documentacion{padding:28px;max-width:1000px;margin:auto;overflow:auto;line-height:1.6}#documentacion a{color:#245f3c}.chart-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
