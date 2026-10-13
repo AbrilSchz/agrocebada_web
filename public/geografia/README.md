@@ -14,3 +14,14 @@ metadatos y hashes de las seis respuestas originales.
 
 Uso: referencia visual en WGS84 [longitud, latitud]. No reemplaza una
 delimitación jurídica ni modifica geometrías, municipios o datos de las parcelas.
+
+La interfaz conserva este archivo íntegro, pero muestra por defecto solo nueve
+municipios seleccionados por `CVEGEO` en `public/config.js`. El contexto exterior
+se desenfoca; cambiar esta selección no elimina geometrías del archivo. Las
+parcelas usan el municipio recibido del modelo; el estado/CVEGEO para filtros se
+añade en memoria a partir de ese nombre y del punto de referencia cuando hay
+homónimos (Emiliano Zapata en Hidalgo y Tlaxcala).
+
+La navegación amplía su borde norte a 20.14 para encuadrar los municipios completos
+de Singuilucan y Cuautepec, ya incluidos en la copia original. No se regeneró ni
+se modificó el GeoJSON por este ajuste.

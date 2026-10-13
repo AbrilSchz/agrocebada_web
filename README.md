@@ -7,11 +7,23 @@ Las fechas de abril–octubre de 2025 corresponden a los insumos, no a varios
 rendimientos de la misma parcela.
 
 Al iniciar, **Elevación** ya está seleccionada sobre el fondo satelital. El botón
-**Parcelas de validación**, a la izquierda de Capas, conserva su nombre activado
+**Parcelas de validación**, a la izquierda de Capas y resultados, conserva su nombre activado
 o desactivado y alterna entre las parcelas de predicción
 final y las 197 parcelas completas. Esas 59 no tienen observado: no constituyen
 un conjunto con errores de validación medidos. La búsqueda de una referencia
 que quedó fuera del filtro vuelve a mostrar todas para poder seleccionarla.
+
+**Capas y resultados** reúne el coloreado temático y las métricas del modelo en
+un panel. **Colorear por** elige la fuente; la escala permanece visible abajo a
+la izquierda aunque el panel esté cerrado. En modo solo contornos mantiene el
+gradiente con una nota que indica que no hay coloreado temático. La navegación
+principal contiene Mapa, Parcelas y Documentación; la API sigue disponible para
+la aplicación, sin un botón adicional en el menú.
+
+Las gráficas de rendimiento, error y aportes son SVG vectoriales, con etiquetas,
+unidades y colores consistentes. La evaluación del modelo añade tarjetas MAE/RMSE
+con la misma escala entre esquemas, conservando las métricas tabulares. La gráfica
+de una predicción final no añade una barra de observado inexistente.
 
 Las pestañas y tarjetas aparecen solo cuando sus datos existen. Las referencias
 OOF conservan Errores; las predicciones finales lo ocultan. Aportes se muestra
@@ -45,12 +57,19 @@ en el entorno del servidor, nunca en `public/` ni en los archivos versionados.
 
 ## Explorar parcelas como tabla
 
-En **Parcelas** puedes filtrar por las 59 parcelas finales, municipio y búsqueda
-por ID o municipio. **Datos a consultar** alterna capas temáticas y resultados:
+En **Parcelas** puedes filtrar por estado, municipio, conjunto (todas,
+entrenamiento OOF o predicción final), búsqueda por ID/municipio/estado,
+disponibilidad de dato y valor mínimo/máximo. **Datos a consultar** alterna capas temáticas y resultados:
 elige capa y periodo del insumo, o conjunto/modelo y métrica. Estos controles
 comparten el estado con el mapa en ambos sentidos. La elevación seleccionada al
 iniciar también aparece en la tabla. El rendimiento sigue siendo cerrado: el
 selector de periodo solo corresponde a los insumos de una capa.
+
+Los extremos del rango son inclusivos y se aplican a la capa o métrica elegida,
+no al rendimiento si se está consultando elevación. Un cero real pasa el filtro
+«Con dato»; un ausente no pasa un rango numérico. Cambiar de capa, fuente o métrica
+limpia los extremos para evitar aplicar una escala de metros a valores en t/ha.
+Cambiar solo el periodo conserva los extremos para comparar el mismo insumo.
 
 Pulsa los encabezados para ordenar de forma ascendente o descendente; los
 valores ausentes quedan al final en ambos casos. Una celda vacía se representa
@@ -58,9 +77,11 @@ con «—», sin convertirse en cero. Al pulsar el ID se abre una ficha con los
 valores existentes y las variables del modelo dentro de Parcelas. **Ver en el
 mapa y abrir dashboard** es la acción explícita para cambiar de vista.
 **Descargar tabla CSV** exporta las filas filtradas en el orden actual y la capa
-o métrica elegida, con su unidad y periodo en el encabezado; conserva los vacíos.
+o métrica elegida, con su unidad y periodo en el encabezado; conserva los vacíos e
+incluye la columna de estado.
 
-**Limpiar filtros de parcelas** restablece población, municipio y búsqueda;
+**Limpiar filtros de parcelas** restablece población, estado, municipio, búsqueda,
+disponibilidad y rango;
 conserva la capa o métrica seleccionada. Fondo satelital/calles, opacidad,
 contornos y límites administrativos son ajustes visuales del mapa: no filtran
 filas ni modifican mediciones, por lo que no son controles de la tabla.
@@ -286,14 +307,47 @@ serializado. Tampoco reentrena para fabricar explicaciones que no fueron entrega
 
 ## Estados y municipios en el mapa
 
-En **Capas → Estados y municipios**, una casilla activa u oculta ambos niveles
-con un clic. Estados usa línea ámbar continua; municipios, línea azul clara
-discontinua. Esta capa es independiente del coloreado de las parcelas y no
-intercepta sus clics. Los polígonos se cargan una vez y se reutilizan al alternar.
+El contexto geográfico se muestra desde el inicio. Hidalgo, Puebla y Tlaxcala
+tienen tonos distintos; solo los **nueve municipios con parcelas** son botones
+geográficos. Pasar el cursor ilumina su polígono y muestra nombre, estado y número
+total de parcelas. Clic, Enter o Espacio seleccionan el municipio, sincronizan los
+filtros y acercan el mapa. Un clic posterior en una parcela hace un segundo zoom
+animado y abre su dashboard. El botón **Ver región** quita estado, municipio y
+búsqueda, conservando el resto de los filtros.
+
+En **Capas y resultados → Estados y municipios seleccionados**, una casilla
+activa u oculta contexto, navegación municipal y desenfoque con un clic. Los
+polígonos administrativos se dibujan debajo de las parcelas, de modo que no
+interceptan sus clics. El archivo se carga una vez y se reutiliza al alternar.
+Fuera de los nueve municipios, una máscara con `backdrop-filter` desenfoca y
+atenúa el fondo; las parcelas y los controles permanecen nítidos. Si un navegador
+no admite desenfoque, conserva la atenuación. Este efecto es visual: no cambia
+geometrías, resultados ni disponibilidad del dato.
+
+La selección y los colores se editan en `public/config.js`:
+
+| Municipio | Clave INEGI (`CVEGEO`) |
+| --- | --- |
+| Almoloya | `13007` |
+| Apan | `13008` |
+| Cuautepec de Hinojosa | `13016` |
+| Emiliano Zapata, Hidalgo | `13021` |
+| Singuilucan | `13057` |
+| Tepeapulco | `13061` |
+| Chignahuapan | `21053` |
+| Calpulalpan | `29006` |
+| Nanacamilpa de Mariano Arista | `29021` |
+
+Se usan claves, no solo nombres: también existe Emiliano Zapata en Tlaxcala
+(`29046`), que no pertenece a esta selección. `zoomMunicipio`, `zoomParcela` y
+`duracionZoom` ajustan la animación. Se detiene un vuelo anterior al elegir otra
+parcela; «movimiento reducido» del sistema sustituye el vuelo por encuadre sin
+animación. La esquina norte de `limites` pasa de 20.04 a **20.14**, porque los
+polígonos completos de Singuilucan y Cuautepec rebasan el límite anterior.
 
 La copia local está en `public/geografia/limites.geojson`: tres estados (Hidalgo,
-Puebla y Tlaxcala) y 169 municipios cuyos rectángulos envolventes intersectan la
-región de navegación. Contiene los nueve municipios del conjunto agrícola. Los
+Puebla y Tlaxcala) y 169 municipios cuyos rectángulos envolventes intersectaban la
+región usada al preparar el archivo. Contiene los nueve municipios del conjunto agrícola. Los
 polígonos permanecen completos: no se recortan para dibujar fronteras artificiales
 en el borde del mapa.
 
@@ -306,9 +360,22 @@ originales. No depende de una llamada a INEGI durante la navegación.
 Las coordenadas GeoJSON conservan [longitud, latitud]. La geometría se generalizó
 con Douglas–Peucker y tolerancia 0.0005 grados; se redondeó a seis decimales. Son
 límites **geoestadísticos para referencia visual**, no una delimitación jurídica
-ni una herramienta para asignar municipios a una parcela. Los municipios de las
-fichas siguen proviniendo del paquete del modelo. Si amplías la región del mapa,
+ni una delimitación para reasignar municipios a una parcela. Los municipios de las
+fichas siguen proviniendo del paquete del modelo. Para el filtro de estado, la
+interfaz añade estado y CVEGEO a partir del nombre municipal y del punto de
+referencia para desambiguar homónimos; esto no se escribe en SQLite. Se comprobó
+la distribución de 100 parcelas en Puebla, 51 en Hidalgo y 46 en Tlaxcala.
+Si amplías la región del mapa,
 comprueba también la cobertura de este archivo.
+
+## Ilustración de selección y GIF pendiente
+
+Antes de seleccionar una parcela, la ficha muestra «Selecciona una parcela» y
+una ilustración SVG con animación CSS. El GIF definitivo sigue pendiente de
+elección. Para incorporarlo, guarda el archivo en `public/media/` y cambia
+`gifSeleccionParcela` en `public/config.js` de `null` a una ruta como
+`'media/seleccion-parcela.gif'`. Si no carga, se conserva la ilustración. Cuando
+el sistema solicita movimiento reducido se usa la ilustración estática.
 
 ## Arquitectura y almacenamiento
 

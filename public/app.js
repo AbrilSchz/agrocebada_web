@@ -25,7 +25,7 @@ document.querySelectorAll('[name=base]').forEach(r => {
   };
 });
 let activeChart = 'rendimiento';
-const resultMap = {enabled:false,model:null,dataset:null,metric:'prediccion',sets:[],sequence:0,controller:null};
+const resultMap={enabled:false,model:null,dataset:null,metric:'prediccion',sets:[],sequence:0,catalogueSequence:0,controller:null};
 let resultCataloguePromise=null;
 const ramp = ['#440154', '#3b528b', '#21918c', '#5ec962', '#fde725'];
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
@@ -34,8 +34,8 @@ function color(t) {
   const i = Math.min(Math.floor(t), ramp.length - 2), f = t - i, a = hex(ramp[i]), b = hex(ramp[i + 1]);
   return `rgb(${a.map((x, k) => Math.round(x + (b[k] - x) * f))})`;
 }
-let geo, allParcels=null, predictionOnly=false, administrativeLayer=null, administrativePromise=null;
-const parcelFilters={municipality:'',query:''}, tableSort={key:'id',direction:'asc'};
+let geo, allParcels=null, predictionOnly=false, administrativePromise=null,regionController=null;
+const parcelFilters={state:'',cohort:'',municipality:'',query:'',availability:'',minimum:'',maximum:''},tableSort={key:'id',direction:'asc'};
 const valueState={loading:false,error:'',parcelError:''};
 let capas = [], valores = {}, rango = [0, 1], selectedParcelId = null;
 let dashboardSequence = 0, dashboardController = null, infoSequence = 0, infoController = null, currentDashboard = null, layerSequence = 0;
@@ -46,27 +46,30 @@ const estilo = feature => {
     fillOpacity: Number($('#opacidad').value) * (v == null ? 0.4 : 1) };
 };
 function refreshStyle() { if (geo) geo.setStyle(estilo); renderParcelTable(); }
-function visibleFeatures() {return window.PARCELS.filter(allParcels?.features || [],{...parcelFilters,predictionOnly});}
+function visibleFeatures() {return window.PARCELS.filter(allParcels?.features || [],{...parcelFilters,predictionOnly,values:valores});}
 function updateMapSummary() {
   const visible=visibleFeatures(),name=resultMap.enabled ? $('#results-metric').selectedOptions[0]?.textContent : capas.find(c=>c.id===$('#capa').value)?.nombre;
   $('#map-summary').hidden=!visible.length;
   $('#map-summary').innerHTML=`<strong>${esc(name || 'Parcelas')}</strong><span>${visible.length} parcelas${predictionOnly ? ' de predicción final' : ' en el mapa'}</span>`;
   if(resultMap.enabled && !valueState.loading && !valueState.error) $('#results-caption').textContent=`${visible.filter(f=>hasNumber(valores[f.id])).length} parcelas con dato · ${resultMap.unit || 't/ha'}`;
+  $('#region-caption').textContent=parcelFilters.municipality || 'Municipio → parcela';
+  regionController?.select(parcelFilters.municipality);
 }
 function drawParcels() {
   const features=visibleFeatures();
   if(geo) map.removeLayer(geo);
   geo=L.geoJSON({type:'FeatureCollection',features},{style:estilo,onEachFeature:(feature,layer)=>layer.on('click',e=>{
     if(e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
-    selectParcel(String(feature.id));
+    zoomToParcel(layer);selectParcel(String(feature.id));
   })}).addTo(map);
-  if(selectedParcelId && !features.some(f=>String(f.id)===selectedParcelId)) clearSelection();
+  if(!valueState.loading && selectedParcelId && !features.some(f=>String(f.id)===selectedParcelId)) clearSelection();
   $('#ids').innerHTML=features.map(f=>`<option value="${esc(f.id)}"></option>`).join('');
   renderParcelTable();
   updateMapSummary();
 }
 function updatePredictionFilter(enabled) {
   predictionOnly=enabled;
+  parcelFilters.cohort=enabled ? 'prediccion' : '';
   $('#prediction-filter').setAttribute('aria-pressed',String(enabled));
   drawParcels();
   if(resultMap.enabled) {updateResultMetrics();paintResultMap();}
@@ -78,7 +81,14 @@ function syncTableControls() {
   for(const prefix of ['map','table']) {
     if($('#'+prefix+'-query').value!==parcelFilters.query) $('#'+prefix+'-query').value=parcelFilters.query;
     $('#'+prefix+'-municipality').value=parcelFilters.municipality;
+    $('#'+prefix+'-state').value=parcelFilters.state;
+    $('#'+prefix+'-availability').value=parcelFilters.availability;
+    if($('#'+prefix+'-min').value!==parcelFilters.minimum) $('#'+prefix+'-min').value=parcelFilters.minimum;
+    if($('#'+prefix+'-max').value!==parcelFilters.maximum) $('#'+prefix+'-max').value=parcelFilters.maximum;
   }
+  $('#map-cohort').value=$('#table-population').value=parcelFilters.cohort;
+  $('#map-source').value=resultMap.enabled ? 'resultados' : 'capas';
+  $('#thematic-controls').hidden=resultMap.enabled;
   $('#table-source').value=resultMap.enabled ? 'resultados' : 'capas';
   for(const [target,source] of [['layer','capa'],['date','fecha'],['set','results-set'],['metric','results-metric']]) {
     const a=$('#table-'+target),b=$('#'+source);
@@ -98,9 +108,9 @@ function renderParcelTable() {
   syncTableControls();
   const features=window.PARCELS.sort(visibleFeatures(),{...tableSort,values:valores}),label=tableValueLabel();
   const header=(key,name)=>`<th scope="col" aria-sort="${tableSort.key===key ? tableSort.direction==='asc' ? 'ascending' : 'descending' : 'none'}"><button type="button" data-sort="${key}">${esc(name)} ${tableSort.key===key ? tableSort.direction==='asc' ? '↑' : '↓' : '↕'}</button></th>`;
-  $('#t').innerHTML=`<caption>${features.length} parcelas · ${esc(label || 'Identidad y conjunto')}</caption><thead><tr>${header('id','Parcela')}${header('municipio','Municipio')}${header('cohorte','Conjunto')}${label ? header('value',label) : ''}</tr></thead><tbody>`+
-    features.map(f=>`<tr data-id="${esc(f.id)}"${String(f.id)===selectedParcelId ? ' class="selected-row"' : ''}><td><button type="button" data-parcel="${esc(f.id)}" aria-label="Abrir ficha de ${esc(f.id)}">${esc(f.id)}</button></td><td>${esc(f.properties.municipio || '')}</td><td><span class="table-cohort-badge ${f.properties.cohorte==='prediccion' ? 'cohort-final' : 'cohort-reference'}">${esc(window.PARCELS.cohort(f))}</span></td>${label ? `<td class="numeric-cell">${hasNumber(valores[f.id]) ? esc(number(valores[f.id],3)) : '<span aria-label="Sin medición">—</span>'}</td>` : ''}</tr>`).join('')+
-    (!features.length ? `<tr><td colspan="${label ? 4 : 3}">Ninguna parcela coincide con estos filtros.</td></tr>` : '')+'</tbody>';
+  $('#t').innerHTML=`<caption>${features.length} parcelas · ${esc(label || 'Identidad y conjunto')}</caption><thead><tr>${header('id','Parcela')}${header('estado','Estado')}${header('municipio','Municipio')}${header('cohorte','Conjunto')}${label ? header('value',label) : ''}</tr></thead><tbody>`+
+    features.map(f=>`<tr data-id="${esc(f.id)}"${String(f.id)===selectedParcelId ? ' class="selected-row"' : ''}><td><button type="button" data-parcel="${esc(f.id)}" aria-label="Abrir ficha de ${esc(f.id)}">${esc(f.id)}</button></td><td>${esc(f.properties.estado || '')}</td><td>${esc(f.properties.municipio || '')}</td><td><span class="table-cohort-badge ${f.properties.cohorte==='prediccion' ? 'cohort-final' : 'cohort-reference'}">${esc(window.PARCELS.cohort(f))}</span></td>${label ? `<td class="numeric-cell">${hasNumber(valores[f.id]) ? esc(number(valores[f.id],3)) : '<span aria-label="Sin medición">—</span>'}</td>` : ''}</tr>`).join('')+
+    (!features.length ? `<tr><td colspan="${label ? 5 : 4}">Ninguna parcela coincide con estos filtros.</td></tr>` : '')+'</tbody>';
   $('#table-status').textContent=valueState.parcelError ? `No se pudieron cargar las parcelas: ${valueState.parcelError}` : valueState.loading ? 'Cargando valores de la selección…' : valueState.error ? `No se pudieron cargar los datos: ${valueState.error}` : `${features.length} de ${allParcels?.features.length || 0} parcelas${label ? ' · '+features.filter(f=>hasNumber(valores[f.id])).length+' con dato' : ''}. Los filtros se comparten con el mapa.`;
   $('#table-status').classList.toggle('error',Boolean(valueState.error || valueState.parcelError));
   $('#table-export').disabled=!features.length || valueState.loading || Boolean(valueState.error);
@@ -116,11 +126,22 @@ $('#table-detail').onclick=e=>{
 };
 $('#table-cohort').onclick=()=>updatePredictionFilter(!predictionOnly);
 for(const prefix of ['map','table']) {
-  $('#'+prefix+'-municipality').onchange=e=>{parcelFilters.municipality=e.target.value;drawParcels();};
+  $('#'+prefix+'-municipality').onchange=e=>{
+    parcelFilters.municipality=e.target.value;
+    if(parcelFilters.municipality) parcelFilters.state=allParcels?.features.find(f=>f.properties.municipio===parcelFilters.municipality)?.properties.estado || '';
+    drawParcels();if(prefix==='map' && parcelFilters.municipality) regionController?.focus(parcelFilters.municipality);
+  };
   $('#'+prefix+'-query').oninput=e=>{parcelFilters.query=e.target.value;drawParcels();};
+  $('#'+prefix+'-state').onchange=e=>{parcelFilters.state=e.target.value;if(parcelFilters.municipality && !allParcels?.features.some(f=>f.properties.municipio===parcelFilters.municipality && (!parcelFilters.state || f.properties.estado===parcelFilters.state))) parcelFilters.municipality='';drawParcels();};
+  $('#'+prefix+'-availability').onchange=e=>{parcelFilters.availability=e.target.value;drawParcels();};
+  for(const [control,key] of [['min','minimum'],['max','maximum']]) $('#'+prefix+'-'+control).oninput=e=>{parcelFilters[key]=e.target.value;drawParcels();};
 }
-$('#table-reset').onclick=()=>{parcelFilters.municipality='';parcelFilters.query='';updatePredictionFilter(false);};
+function updatePopulation(cohort) {parcelFilters.cohort=cohort;predictionOnly=cohort==='prediccion';$('#prediction-filter').setAttribute('aria-pressed',String(predictionOnly));drawParcels();if(resultMap.enabled) {updateResultMetrics();return paintResultMap();}}
+$('#map-cohort').onchange=$('#table-population').onchange=e=>updatePopulation(e.target.value);
+$('#table-reset').onclick=()=>{Object.keys(parcelFilters).forEach(key=>parcelFilters[key]='');updatePredictionFilter(false);};
+function clearValueRange() {parcelFilters.minimum='';parcelFilters.maximum='';}
 $('#table-source').onchange=e=>e.target.value==='resultados' ? activateResultMap() : disableResultMap();
+$('#map-source').onchange=$('#table-source').onchange;
 $('#table-layer').onchange=e=>{$('#capa').value=e.target.value;return $('#capa').onchange();};
 $('#table-date').onchange=e=>{$('#fecha').value=e.target.value;return $('#fecha').onchange();};
 $('#table-set').onchange=e=>{$('#results-set').value=e.target.value;return $('#results-set').onchange({target:$('#results-set')});};
@@ -131,32 +152,40 @@ $('#table-export').onclick=()=>{
   const a=document.createElement('a');a.href=url;a.download='agrocebada-parcelas.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 L.DomEvent.disableClickPropagation($('#map-tools'));
-map.createPane('administrative');
-map.getPane('administrative').style.zIndex=450;
-map.getPane('administrative').style.pointerEvents='none';
+L.DomEvent.disableClickPropagation($('#map-navigation'));
+L.DomEvent.disableClickPropagation($('#map-legend'));
+function setupRegions(data) {
+  if(regionController || !allParcels) return;
+  allParcels=window.REGIONS.enrichParcels(allParcels,data,C.estados);
+  const states=[...new Set(allParcels.features.map(f=>f.properties.estado).filter(Boolean))].sort();
+  for(const prefix of ['map','table']) $('#'+prefix+'-state').innerHTML='<option value="">Todos los estados</option>'+states.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  regionController=new window.REGIONS.Controller(map,C,(properties,bounds)=>{
+    parcelFilters.state=C.estados[properties.entidad].nombre;parcelFilters.municipality=properties.nombre;parcelFilters.query='';
+    drawParcels();toggleLayers(false);window.REGIONS.zoom(map,bounds,C,'municipality');
+  });
+  regionController.load(data,allParcels.features);
+}
+function geographyStatus() {
+  const status=$('#administrative-status');status.hidden=!$('#administrative-borders').checked;
+  if(!status.hidden) status.innerHTML=Object.values(C.estados).map(s=>`<span class="state-dot" style="background:${esc(s.color)}"></span>${esc(s.nombre)}`).join(' ')+`<br><small>${C.municipiosSeleccionados.length} municipios · INEGI</small>`;
+}
 $('#administrative-borders').onchange=async e=>{
   const control=e.target,status=$('#administrative-status');
-  if(!control.checked) {
-    if(administrativeLayer) map.removeLayer(administrativeLayer);
-    status.hidden=true;return;
-  }
+  if(!control.checked) {regionController?.setVisible(false);status.hidden=true;return;}
   status.hidden=false;status.textContent='Cargando límites…';
   try {
     administrativePromise ??= json(C.limitesAdministrativos).catch(error=>{administrativePromise=null;throw error;});
     const data=await administrativePromise;
-    administrativeLayer ??= L.geoJSON(data,{pane:'administrative',interactive:false,style:feature=>({
-      color:feature.properties.nivel==='estado' ? '#f0b75c' : '#82d4e2',
-      weight:feature.properties.nivel==='estado' ? 3 : 1.3,
-      opacity:.95,fill:false,dashArray:feature.properties.nivel==='municipio' ? '5 4' : undefined
-    })});
+    setupRegions(data);drawParcels();
     if(!control.checked) return;
-    administrativeLayer.addTo(map);
-    status.innerHTML='<span class="border-key state-key"></span> Estados <span class="border-key municipality-key"></span> Municipios<br><small>INEGI · límites geoestadísticos</small>';
+    regionController?.setVisible(true);geographyStatus();
   } catch(error) {
     if(!control.checked) return;
     control.checked=false;status.textContent='No se pudieron cargar los límites. Activa el control para reintentar.';
   }
 };
+$('#region-home').onclick=()=>{parcelFilters.state='';parcelFilters.municipality='';parcelFilters.query='';clearSelection();drawParcels();regionController ? regionController.home() : geo && window.REGIONS.zoom(map,geo.getBounds(),C,'municipality');};
+function zoomToParcel(layer) {window.REGIONS.zoom(map,layer.getBounds(),C,'parcel');}
 async function json(url, options) {
   const response = await fetch(url, options);
   const data = await response.json().catch(() => null);
@@ -186,8 +215,9 @@ async function pintar() {
   const sequence = ++layerSequence, capa = $('#capa').value, fSel = $('#fecha');
   $('#layers-error').hidden = true;
   valueState.error='';valores={};
-  if (!capa) { valueState.loading=false;fSel.hidden = true; $('#leyenda').replaceChildren(); refreshStyle();updateMapSummary();return; }
+  if(!capa) {valueState.loading=false;fSel.hidden=true;drawParcels();updateMapSummary();updateLegend();return;}
   valueState.loading=true;refreshStyle();
+  updateLegend();
   try {
     if (fSel.dataset.capa !== capa) {
       const fechas = await json(`/api/capas/${encodeURIComponent(capa)}/fechas`);
@@ -201,12 +231,18 @@ async function pintar() {
     valores = data.valores;valueState.loading=false;
     const c = capas.find(x => x.id === capa), vs = Object.values(valores).filter(v => v != null && Number.isFinite(v));
     rango = [c?.min ?? (vs.length ? Math.min(...vs) : 0), c?.max ?? (vs.length ? Math.max(...vs) : 1)];
-    $('#leyenda').innerHTML = `<div class="grad" style="background:linear-gradient(90deg,${ramp})"></div><div class="rango"><span>${esc(number(rango[0]))}</span><span>${esc(number(rango[1]))}</span></div><small>${esc(c?.unidad || '')}</small>`;
-    refreshStyle();
+    drawParcels();updateLegend();
     updateMapSummary();
-  } catch (error) { if (sequence === layerSequence && !resultMap.enabled) { valueState.loading=false;valueState.error=error.message;$('#layers-error').textContent = error.message; $('#layers-error').hidden = false;renderParcelTable(); } }
+  } catch (error) { if (sequence === layerSequence && !resultMap.enabled) { valueState.loading=false;valueState.error=error.message;$('#layers-error').textContent = error.message; $('#layers-error').hidden = false;renderParcelTable();updateLegend(); } }
 }
-$('#capa').onchange = $('#fecha').onchange = () => { disableResultMap(false); return pintar(); };
+$('#capa').onchange=()=>{clearValueRange();disableResultMap(false);return pintar();};
+$('#fecha').onchange=()=>{disableResultMap(false);return pintar();};
+function updateLegend() {
+  $('#legend-title').textContent=tableValueLabel() || 'Contornos de parcelas';
+  const unit=resultMap.enabled ? resultMap.unit || 't/ha' : capas.find(c=>c.id===$('#capa').value)?.unidad || '';
+  const status=valueState.loading ? 'Cargando valores…' : valueState.error ? 'Error de carga' : !resultMap.enabled && !$('#capa').value ? 'Sin coloreado temático' : `${unit} · Gris: sin dato`;
+  $('#leyenda').innerHTML=`<div class="grad" style="background:linear-gradient(90deg,${ramp})"></div>${!valueState.loading && !valueState.error && (resultMap.enabled || $('#capa').value) ? `<div class="rango"><span>${number(rango[0])}</span><span>${number(rango[1])}</span></div>` : ''}<small>${esc(status)}</small>`;
+}
 $('#info-button').onclick = () => { if (currentDashboard) requestExplanation(currentDashboard); };
 function vista(view) {
   $('#container').hidden = view !== 'mapa'; $('#tabla').hidden = view !== 'tabla'; $('#documentacion').hidden = view !== 'documentacion';
@@ -217,26 +253,30 @@ function vista(view) {
 document.querySelectorAll('.nav a[data-v]').forEach(a => a.onclick = e => { e.preventDefault(); vista(a.dataset.v); });
 function irA(id) {
   if (!geo) return;
-  if(predictionOnly && allParcels.features.some(f=>String(f.id)===id && f.properties.cohorte!=='prediccion')) updatePredictionFilter(false);
-  if(allParcels.features.some(f=>String(f.id)===id) && !visibleFeatures().some(f=>String(f.id)===id)) {parcelFilters.municipality='';parcelFilters.query='';drawParcels();}
+  if(allParcels.features.some(f=>String(f.id)===id) && !visibleFeatures().some(f=>String(f.id)===id)) {Object.keys(parcelFilters).forEach(key=>parcelFilters[key]='');updatePredictionFilter(false);}
   let found = false;
   geo.eachLayer(layer => {
     if (String(layer.feature.id) !== id) return;
-    found = true; vista('mapa'); map.fitBounds(layer.getBounds(), { maxZoom: 16 }); ajustarLimites(); selectParcel(id);
+    found = true; vista('mapa');requestAnimationFrame(()=>{map.invalidateSize();zoomToParcel(layer);});selectParcel(id);
   });
   if (!found && id) { $('#map-status').textContent = `Parcela ${id} no encontrada`; $('#map-status').hidden = false; }
 }
 $('#buscar').onchange = e => irA(e.target.value.trim());
 async function init() {
   // El fallo de una capa no debe impedir dibujar las parcelas.
-  const [parcelResult, layerResult] = await Promise.allSettled([json('/api/parcelas'), json('/api/capas')]);
+  administrativePromise ??=json(C.limitesAdministrativos).catch(error=>{administrativePromise=null;throw error;});
+  const [parcelResult,layerResult,borderResult]=await Promise.allSettled([json('/api/parcelas'),json('/api/capas'),administrativePromise]);
   if (parcelResult.status === 'fulfilled') {
-    const fc = parcelResult.value;allParcels=fc;drawParcels();
+    const fc=borderResult.status==='fulfilled' ? window.REGIONS.enrichParcels(parcelResult.value,borderResult.value,C.estados) : parcelResult.value;allParcels=fc;drawParcels();
     const predictionCount=fc.features.filter(f=>f.properties.cohorte==='prediccion').length;
     $('#prediction-filter').hidden=predictionCount===0;
     $('#prediction-filter').textContent='Parcelas de validación';
     const municipalities=[...new Set(fc.features.map(f=>f.properties.municipio).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
     for(const prefix of ['map','table']) $('#'+prefix+'-municipality').innerHTML='<option value="">Todos los municipios</option>'+municipalities.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+    const states=[...new Set(fc.features.map(f=>f.properties.estado).filter(Boolean))].sort();
+    for(const prefix of ['map','table']) $('#'+prefix+'-state').innerHTML='<option value="">Todos los estados</option>'+states.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    if(borderResult.status==='fulfilled') {setupRegions(borderResult.value);regionController.setVisible($('#administrative-borders').checked);geographyStatus();}
+    else {$('#administrative-status').hidden=false;$('#administrative-status').textContent='No se pudo cargar el contexto municipal. Activa Estados y municipios para reintentar.';$('#administrative-borders').checked=false;}
     renderParcelTable();
     if (geo.getBounds().isValid()) { map.fitBounds(geo.getBounds()); ajustarLimites(); }
     $('#map-status').hidden = true;
@@ -250,6 +290,12 @@ async function init() {
     if(initial) {$('#capa').value=initial.id;await pintar();}
     renderParcelTable();
   } else { $('#layers-error').textContent = `No se pudieron cargar las capas: ${layerResult.reason.message}`; $('#layers-error').hidden = false;valueState.error=layerResult.reason.message;renderParcelTable(); }
+  updateLegend();
+}
+if(C.gifSeleccionParcela && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+  const gif=$('#selection-gif');gif.src=C.gifSeleccionParcela;
+  gif.onload=()=>{gif.hidden=false;$('#selection-illustration').hidden=true;};
+  gif.onerror=()=>{gif.hidden=true;$('#selection-illustration').hidden=false;};
 }
 function dashboardState(state, message = '') {
   $('#dashboard-loading').hidden = state !== 'loading';
@@ -347,59 +393,22 @@ function updateDashboard(data) {
 function modelPanel(data) {
   const model=data.modelo,ctx=data.contexto_modelo,parts=[];
   const validation=(model?.validacion || []).filter(r=>r.modelo==='Ensamble_50_50');
-  if(validation.length) parts.push(`<h3>Evaluación global del ensamble</h3><p>Métricas reportadas sobre ${model.entrenamiento} parcelas con observado.</p><div class="table-wrap"><table><thead><tr><th>Validación</th><th>MAE (t/ha)</th><th>RMSE (t/ha)</th><th>R²</th><th>MAE por fold ± DE</th></tr></thead><tbody>${validation.map(r=>`<tr><td title="${esc(r.esquema)}">${esc(P.scheme(r.esquema))}</td><td>${number(r.MAE_pooled,3)}</td><td>${number(r.RMSE_pooled,3)}</td><td>${number(r.R2_pooled,3)}</td><td>${number(r.MAE_fold_media,3)} ± ${number(r.MAE_fold_sd,3)}</td></tr>`).join('')}</tbody></table></div><small>MAE y RMSE se calculan sobre parcelas (pooled). La media por fold da igual peso a cada partición; en LOGO, a cada municipio.</small>`);
+  if(validation.length) parts.push(`<h3>Evaluación global del ensamble</h3><p>Métricas reportadas sobre ${model.entrenamiento} parcelas con observado.</p>${window.CHARTS.validation(validation)}<div class="table-wrap"><table><thead><tr><th>Validación</th><th>MAE (t/ha)</th><th>RMSE (t/ha)</th><th>R²</th><th>MAE por fold ± DE</th></tr></thead><tbody>${validation.map(r=>`<tr><td title="${esc(r.esquema)}">${esc(P.scheme(r.esquema))}</td><td>${number(r.MAE_pooled,3)}</td><td>${number(r.RMSE_pooled,3)}</td><td>${number(r.R2_pooled,3)}</td><td>${number(r.MAE_fold_media,3)} ± ${number(r.MAE_fold_sd,3)}</td></tr>`).join('')}</tbody></table></div><small>MAE y RMSE se calculan sobre parcelas (pooled). La media por fold da igual peso a cada partición; en LOGO, a cada municipio.</small>`);
   if(ctx?.validacion_parcela?.length) parts.push(`<h3>Predicción de esta parcela en validación</h3><div class="table-wrap"><table><thead><tr><th>Validación</th><th>Predicción (t/ha)</th><th>Error firmado (t/ha)</th></tr></thead><tbody>${ctx.validacion_parcela.map(r=>`<tr><td title="${esc(r.esquema)}">${esc(P.scheme(r.esquema))}</td><td>${number(r.prediccion)}</td><td>${number(r.error_firmado_t_ha)}</td></tr>`).join('')}</tbody></table></div>`);
   const importances=(model?.importancias_globales || []).filter(r=>hasNumber(r.shap_media));
-  if(importances.length) {
-    const max=Math.max(.001,...importances.map(r=>r.shap_media));
-    parts.push(`<h3>Variables más importantes en el conjunto</h3><p>Media de |SHAP| · HGB agronómico sin coordenadas. Estas importancias globales no son aportes de esta parcela.</p><div class="importance-list">${importances.map((r,i)=>`<div class="importance-row"><span title="${esc(r.variable)}">${esc(P.variable(r.variable))}</span><div class="importance-track"><div class="importance-color-${i%3}" style="width:${100*r.shap_media/max}%"></div></div><small>${number(r.shap_media,3)} ± ${number(r.shap_sd,3)} t/ha</small></div>`).join('')}</div>`);
-  }
+  if(importances.length) parts.push(`<h3>Variables más importantes en el conjunto</h3><p>Media de |SHAP| · HGB agronómico sin coordenadas. Estas importancias globales no son aportes de esta parcela.</p>${window.CHARTS.importances(importances)}`);
   if(model?.limitaciones?.length) parts.push(`<details class="data-details"><summary>Alcance del modelo</summary><ul>${model.limitaciones.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></details>`);
   const features=Object.entries(ctx?.variables_modelo || {}).filter(([,value])=>hasNumber(value));
   if(features.length) parts.push(`<details class="data-details"><summary>${features.length} variables disponibles de esta parcela</summary><p>Valores originales de los insumos. Pasa sobre un nombre para ver su identificador en el CSV.</p><div class="table-wrap"><table><thead><tr><th>Variable</th><th>Valor</th></tr></thead><tbody>${features.map(([key,value])=>`<tr><td title="${esc(key)}">${esc(P.variable(key))}</td><td>${number(value,4)}${P.unit(key) ? ' '+esc(P.unit(key)) : ''}</td></tr>`).join('')}</tbody></table></div></details>`);
   return parts.join('');
 }
-function svgChart(content, height = 190) { return `<svg viewBox="0 0 460 ${height}" role="img" aria-label="Gráfica de resultados">${content}</svg>`; }
-function renderChart1(data) {
-  const rows=[['Predicción',data.resultado.prediccion,'#218f83'],['Observado',data.resultado.observado,'#5b6fa9']].filter(row=>hasNumber(row[1]));
-  const max=Math.max(1,...rows.map(row=>row[1]).filter(v=>v!=null))*1.2;
-  const y=value=>155-115*value/max;
-  let svg='<text x="48" y="15" font-size="11">'+esc(data.unidad_rendimiento)+'</text><line x1="48" y1="155" x2="435" y2="155" stroke="#bbb"/>';
-  for(let i=0;i<=4;i++) {
-    const value=max*i/4;
-    svg+=`<line x1="48" y1="${y(value)}" x2="435" y2="${y(value)}" stroke="#eee"/><text x="40" y="${y(value)+4}" text-anchor="end" font-size="11">${number(value,1)}</text>`;
-  }
-  rows.forEach(([name,value,fill],i)=>{
-    const x=rows.length===1 ? 240 : 130+i*180;
-    svg+=`<text x="${x}" y="180" text-anchor="middle" font-size="12">${esc(name)}</text>`;
-    if(value==null) svg+=`<text x="${x}" y="105" text-anchor="middle" font-size="12">Sin dato</text>`;
-    else svg+=`<rect x="${x-35}" y="${y(value)}" width="70" height="${155-y(value)}" rx="5" fill="${fill}"><title>${esc(name)}: ${number(value)} ${esc(data.unidad_rendimiento)}</title></rect><text x="${x}" y="${y(value)-8}" text-anchor="middle" font-size="12">${number(value)}</text>`;
-  });
-  $('#chart1').innerHTML=svgChart(svg,200);
-}
-function renderChart2(data) {
-  const error=data.metricas.error_firmado_t_ha;
-  if(error==null) { $('#chart2').innerHTML='<p>Sin rendimiento observado: no se puede calcular el error.</p>';return; }
-  const extent=Math.max(1,Math.abs(error)*1.2),x=value=>240+175*value/extent;
-  const left=Math.min(240,x(error)),width=Math.abs(x(error)-240);
-  const svg=`<text x="240" y="25" text-anchor="middle" font-size="13">${number(error)} ${esc(data.unidad_rendimiento)}</text><line x1="65" y1="100" x2="415" y2="100" stroke="#bbb"/><line x1="240" y1="45" x2="240" y2="115" stroke="#777"/><rect x="${left}" y="62" width="${width}" height="30" rx="4" fill="${error>=0 ? '#3b528b' : '#21918c'}"><title>Error firmado: ${number(error)} ${esc(data.unidad_rendimiento)}</title></rect><text x="65" y="135" text-anchor="middle" font-size="11">${number(-extent,1)}</text><text x="240" y="135" text-anchor="middle" font-size="11">0</text><text x="415" y="135" text-anchor="middle" font-size="11">${number(extent,1)}</text>`;
-  $('#chart2').innerHTML=svgChart(svg,155);
-}
+function renderChart1(data) {$('#chart1').innerHTML=window.CHARTS.yield(data);}
+function renderChart2(data) {$('#chart2').innerHTML=window.CHARTS.error(data);}
 function renderChart3(data) {
   const partial=data.contexto_modelo?.shap_hgb_parcial?.length ? data.contexto_modelo.shap_hgb_parcial : null;
-  const rows = partial ? partial.map(c=>({variable:c.variable,aporte_t_ha:c.aporte_redondeado_t_ha})) : data.contribuciones;
-  if (!rows.length) {
-    const status=data.explicabilidad?.estado;
-    $('#chart3').innerHTML=status==='incoherente' ? '<p>Los SHAP recibidos no reconstruyen la predicción mostrada. Explicación pendiente de corregir.</p>' : data.modelo ? '<p>No se exportó una explicación SHAP completa para esta predicción OOF. Consulta Modelo para las importancias globales.</p>' : '<p>Explicación SHAP pendiente: falta confirmar el modelo y la predicción que explican los aportes.</p>';
-    return;
-  }
-  const max = Math.max(.01, ...rows.map(c => Math.abs(c.aporte_t_ha))), height = rows.length * 36 + 40, zero = 310;
-  let svg = `<line x1="${zero}" y1="5" x2="${zero}" y2="${height-28}" stroke="#777"/>`;
-  rows.forEach((c, i) => {
-    const width = Math.abs(c.aporte_t_ha) * 96 / max, y = i * 36 + 10;
-    svg += `<text x="195" y="${y+16}" text-anchor="end" font-size="11">${esc(P.variable(c.variable).length>30 ? P.variable(c.variable).slice(0,28)+'…' : P.variable(c.variable))}</text><rect x="${c.aporte_t_ha >= 0 ? zero : zero-width}" y="${y}" width="${width}" height="22" fill="${c.aporte_t_ha >= 0 ? '#21918c' : '#3b528b'}"><title>${number(c.aporte_t_ha)} ${esc(data.unidad_rendimiento)}</title></rect><text x="448" y="${y+16}" text-anchor="end" font-size="10">${number(c.aporte_t_ha)}</text>`;
-  });
-  $('#chart3').innerHTML = (partial ? `<h4>Componente HGB final: tres aportes redondeados</h4><p>Tres contribuciones redondeadas a la salida del HGB (${number(data.contexto_modelo.componentes.hgb)} t/ha). Son una explicación parcial de ese componente y no reconstruyen el ensamble.</p>` : '') + svgChart(svg, height) + (partial ? '' : `<p>Valor base: ${number(data.resultado.valor_base_t_ha)} · Predicción: ${number(data.resultado.prediccion)} ${esc(data.unidad_rendimiento)}</p>`);
+  const rows=partial ? partial.map(c=>({variable:c.variable,aporte_t_ha:c.aporte_redondeado_t_ha})) : data.contribuciones;
+  $('#chart3').innerHTML=(partial ? `<div class="chart-notice"><span class="eyebrow">EXPLICACIÓN PARCIAL</span><p>Tres aportes redondeados a la salida del HGB (${number(data.contexto_modelo.componentes.hgb)} t/ha). No reconstruyen el ensamble.</p></div>` : '')+
+    window.CHARTS.contributions(rows,data.unidad_rendimiento)+(partial ? '' : `<p>Valor base: ${number(data.resultado.valor_base_t_ha)} · Predicción: ${number(data.resultado.prediccion)} ${esc(data.unidad_rendimiento)}</p>`);
 }
 async function requestExplanation(context) {
   const parcelId = context.ID_POLIGONO, selectedSequence = dashboardSequence, sequence = ++infoSequence;
@@ -420,14 +429,16 @@ async function requestExplanation(context) {
   } finally { if (isCurrent()) { $('#info-loading').hidden = true; $('#info-button').disabled = false; $('#info-button').setAttribute('aria-busy','false'); } }
 }
 async function activateResultMap() {
+  if(!resultMap.enabled) clearValueRange();
   resultMap.enabled=true;++layerSequence;
+  const catalogueSequence=++resultMap.catalogueSequence;
   valores={};valueState.loading=true;valueState.error='';refreshStyle();
-  $('#results-panel').hidden=false;$('#results-button').setAttribute('aria-expanded','true');
-  $('#results-caption').textContent='Cargando conjuntos…';$('#results-error').hidden=true;toggleLayers(false);
+  $('#results-panel').hidden=false;
+  $('#results-caption').textContent='Cargando conjuntos…';$('#results-error').hidden=true;updateLegend();
   try {
     resultCataloguePromise ??= json('/api/resultados/campanas').catch(error=>{resultCataloguePromise=null;throw error;});
     const catalogue=await resultCataloguePromise;
-    if(!resultMap.enabled) return;
+    if(!resultMap.enabled || catalogueSequence!==resultMap.catalogueSequence) return;
     resultMap.sets=catalogue.modelos.flatMap(model=>model.campanas.map(set=>({...set,model:model.version_modelo})));
     if(!resultMap.sets.length) throw new Error('No hay resultados disponibles');
     const preferred=resultMap.sets.findIndex(set=>set.model===(currentDashboard?.version_modelo || resultMap.model) && set.campaña===(currentDashboard?.campaña || resultMap.dataset));
@@ -438,24 +449,26 @@ async function activateResultMap() {
     updateResultMetrics();
     await paintResultMap();
   } catch(error) {
-    if(!resultMap.enabled) return;
+    if(!resultMap.enabled || catalogueSequence!==resultMap.catalogueSequence) return;
     valueState.loading=false;valueState.error=error.message;renderParcelTable();
     $('#results-error').textContent=error.message;$('#results-error').hidden=false;$('#results-caption').textContent='No se pudieron cargar los resultados';
+    updateLegend();
   }
 }
 function updateResultMetrics() {
   const set=resultMap.sets.find(s=>s.model===resultMap.model && s.campaña===resultMap.dataset);
   const options=[['prediccion','Predicción'],['observado','Observado'],['error_firmado_t_ha','Error firmado'],['error_absoluto_t_ha','Error absoluto']]
     .filter(([key])=>(!predictionOnly || key==='prediccion') && set?.metricas_disponibles?.[key]!==false);
-  if(!options.some(([key])=>key===resultMap.metric)) resultMap.metric=options[0]?.[0] || 'prediccion';
+  if(!options.some(([key])=>key===resultMap.metric)) {resultMap.metric=options[0]?.[0] || 'prediccion';clearValueRange();}
   $('#results-metric').innerHTML=options.map(([key,label])=>`<option value="${key}">${label}</option>`).join('');
   $('#results-metric').value=resultMap.metric;
   syncTableControls();
 }
 function disableResultMap(restore=true) {
   const wasEnabled=resultMap.enabled;
-  resultMap.enabled=false;++resultMap.sequence;resultMap.controller?.abort();
-  $('#results-panel').hidden=true;$('#results-button').setAttribute('aria-expanded','false');
+  resultMap.enabled=false;++resultMap.sequence;++resultMap.catalogueSequence;resultMap.controller?.abort();
+  $('#results-panel').hidden=true;
+  if(wasEnabled) clearValueRange();
   const restored=restore ? pintar() : null;
   updateMapSummary();
   if(wasEnabled && selectedParcelId) selectParcel(selectedParcelId);
@@ -465,34 +478,30 @@ async function paintResultMap() {
   if(!resultMap.enabled || !resultMap.dataset || !resultMap.model) return;
   const sequence=++resultMap.sequence;
   resultMap.controller?.abort();resultMap.controller=new AbortController();
-  valores={};valueState.loading=true;valueState.error='';refreshStyle();$('#results-error').hidden=true;$('#results-legend').replaceChildren();
+  valores={};valueState.loading=true;valueState.error='';refreshStyle();$('#results-error').hidden=true;updateLegend();
   $('#results-caption').textContent='Cargando valores…';
   if(selectedParcelId) selectParcel(selectedParcelId);
   const params=new URLSearchParams({'campaña':resultMap.dataset,version_modelo:resultMap.model,metrica:resultMap.metric});
   try {
     const data=await json(`/api/resultados/valores?${params}`,{signal:resultMap.controller.signal});
     if(!resultMap.enabled || sequence!==resultMap.sequence) return;
-    valores=data.valores;rango=data.rango;resultMap.unit=data.unidad;valueState.loading=false;refreshStyle();
+    valores=data.valores;rango=data.rango;resultMap.unit=data.unidad;valueState.loading=false;drawParcels();
     const count=visibleFeatures().filter(feature=>hasNumber(valores[feature.id])).length;
     $('#results-caption').textContent=`${count} parcelas con dato · ${data.unidad}`;
-    $('#results-legend').innerHTML=`<div class="grad" style="background:linear-gradient(90deg,${ramp})"></div><div class="rango"><span>${number(rango[0])}</span><span>${number(rango[1])}</span></div><small>${esc(data.dataset_label)} · Gris: sin dato.</small>`;
+    updateLegend();
     updateMapSummary();
   } catch(error) {
     if(!resultMap.enabled || sequence!==resultMap.sequence || error.name==='AbortError') return;
     valueState.loading=false;valueState.error=error.message;renderParcelTable();
     $('#results-error').textContent=error.message;$('#results-error').hidden=false;$('#results-caption').textContent='No se pudieron cargar los valores';
+    updateLegend();
   }
 }
-$('#results-button').onclick=()=>resultMap.enabled ? disableResultMap() : activateResultMap();
-$('#results-close').onclick=()=>disableResultMap();
 $('#results-set').onchange=e=>{
   const set=resultMap.sets[Number(e.target.value)];
   resultMap.model=set.model;resultMap.dataset=set.campaña;updateResultMetrics();return paintResultMap();
 };
-$('#results-metric').onchange=e=>{resultMap.metric=e.target.value;return paintResultMap();};
-for(const id of ['results-panel','results-button']) {
-  L.DomEvent.disableClickPropagation($('#'+id));L.DomEvent.disableScrollPropagation($('#'+id));
-}
+$('#results-metric').onchange=e=>{clearValueRange();resultMap.metric=e.target.value;return paintResultMap();};
 init().catch(error => { $('#map-status').textContent = error.message; $('#map-status').hidden = false; });
 
 
