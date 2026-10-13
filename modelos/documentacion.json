@@ -11,6 +11,8 @@
     {"id":"api","archivo":"server.js","titulo":"API de parcelas, resultados y explicación · JavaScript"},
     {"id":"dashboard","archivo":"public/app.js","titulo":"Mapa, dashboard y filtros compartidos · JavaScript"},
     {"id":"tabla","archivo":"public/parcels.js","titulo":"Tabla, filtros, ordenación y exportación · JavaScript"},
+    {"id":"regiones","archivo":"public/regions.js","titulo":"Municipios, máscara geográfica y zoom · JavaScript"},
+    {"id":"graficas","archivo":"public/charts.js","titulo":"Gráficas vectoriales de resultados e importancia · JavaScript"},
     {"id":"etiquetas","archivo":"public/labels.js","titulo":"Nombres de variables y unidades · JavaScript"},
     {"id":"documentacion","archivo":"public/documentation.js","titulo":"Visor de libretas · JavaScript"},
     {"id":"lector-notebooks","archivo":"lib/documentation.js","titulo":"Lectura de notebooks y descargas · JavaScript"}

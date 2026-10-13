@@ -13,7 +13,6 @@
     <a href="#mapa" class="active" data-v="mapa">Mapa</a>
     <a href="#tabla" data-v="tabla">Parcelas</a>
     <a href="#documentacion" data-v="documentacion">Documentación</a>
-    <a href="/api/capas" target="_blank" rel="noopener">API</a>
   </nav>
   <label class="sr-only" for="buscar">Buscar parcela por ID</label>
   <input id="buscar" placeholder="Buscar ID_POLIGONO…" list="ids">
@@ -25,40 +24,46 @@
       <div id="map"></div>
       <div id="map-tools">
         <button id="prediction-filter" type="button" aria-pressed="false" hidden title="Mostrar únicamente las 59 parcelas con predicción final, sin rendimiento observado">Parcelas de validación</button>
-        <button id="layers-button" type="button" aria-expanded="false" aria-controls="layers-panel">Capas</button>
+        <button id="layers-button" type="button" aria-expanded="false" aria-controls="layers-panel">Capas y resultados</button>
       </div>
+      <div id="map-navigation"><button id="region-home" type="button">← Ver región</button><span id="region-caption">Municipio → parcela</span></div>
       <div id="layers-panel" hidden>
+        <div class="panel-heading"><span class="eyebrow">EXPLORAR EL MAPA</span><strong>Capas y resultados</strong></div>
+        <label for="map-source">Colorear por</label>
+        <select id="map-source"><option value="capas">Capas temáticas</option><option value="resultados">Resultados del modelo</option></select>
+        <div id="thematic-controls">
+          <h4>Capa temática</h4>
+          <label class="sr-only" for="capa">Capa temática</label>
+          <select id="capa"><option value="">— Solo contornos —</option></select>
+          <label class="sr-only" for="fecha">Fecha de la capa</label>
+          <select id="fecha" hidden></select>
+        </div>
+        <section id="results-panel" aria-label="Resultados del modelo" hidden>
+          <h4>Resultados por parcela</h4>
+          <label for="results-set">Conjunto y modelo<select id="results-set"></select></label>
+          <label for="results-metric">Métrica<select id="results-metric"><option value="prediccion">Predicción</option><option value="observado">Observado</option><option value="error_firmado_t_ha">Error firmado</option><option value="error_absoluto_t_ha">Error absoluto</option></select></label>
+          <p id="results-caption" role="status"></p><p id="results-error" class="error" hidden></p>
+        </section>
         <h4>Mapa base</h4>
         <label><input type="radio" name="base" value="calles"> Calles</label>
         <label><input type="radio" name="base" value="sat" checked> Satelital</label>
-        <h4>Capa temática</h4>
-        <label class="sr-only" for="capa">Capa temática</label>
-        <select id="capa"><option value="">— Solo contornos —</option></select>
-        <label class="sr-only" for="fecha">Fecha de la capa</label>
-        <select id="fecha" hidden></select>
         <h4>Filtrar parcelas</h4>
+        <label for="map-state">Estado</label><select id="map-state"><option value="">Todos los estados</option></select>
+        <label for="map-cohort">Conjunto</label><select id="map-cohort"><option value="">Todas las parcelas</option><option value="referencia">Entrenamiento · OOF</option><option value="prediccion">Predicción final</option></select>
         <label for="map-municipality">Municipio</label>
         <select id="map-municipality"><option value="">Todos los municipios</option></select>
         <label for="map-query">Buscar en las parcelas</label>
         <input id="map-query" type="search" placeholder="ID o municipio…">
+        <label for="map-availability">Disponibilidad del valor</label><select id="map-availability"><option value="">Todas</option><option value="present">Con dato</option><option value="missing">Sin dato</option></select>
+        <div class="range-filter"><label for="map-min">Valor mínimo<input id="map-min" type="number" step="any" placeholder="Sin límite"></label><label for="map-max">Valor máximo<input id="map-max" type="number" step="any" placeholder="Sin límite"></label></div>
         <label for="opacidad">Opacidad</label>
         <input id="opacidad" type="range" min="0" max="1" step="0.05" value="0.75">
         <label><input id="contornos" type="checkbox" checked> Mostrar contornos</label>
-        <label class="admin-toggle"><input id="administrative-borders" type="checkbox"> Estados y municipios</label>
+        <label class="admin-toggle"><input id="administrative-borders" type="checkbox" checked> Estados y municipios seleccionados</label>
         <p id="administrative-status" role="status" hidden></p>
-        <div id="leyenda"></div>
         <p id="layers-error" class="error" hidden></p>
       </div>
-      <section id="results-panel" aria-label="Resultados del modelo" hidden>
-        <div class="timeline-heading"><div><span class="eyebrow">RESULTADOS POR PARCELA</span><strong>Rendimiento del conjunto</strong></div><button id="results-close" type="button" aria-label="Cerrar resultados">×</button></div>
-        <div class="timeline-settings">
-          <label for="results-set">Conjunto y modelo<select id="results-set"></select></label>
-          <label for="results-metric">Colorear por<select id="results-metric"><option value="prediccion">Predicción</option><option value="observado">Observado</option><option value="error_firmado_t_ha">Error firmado</option><option value="error_absoluto_t_ha">Error absoluto</option></select></label>
-        </div>
-        <p id="results-caption" role="status"></p>
-        <div id="results-legend"></div><p id="results-error" class="error" hidden></p>
-      </section>
-      <button id="results-button" type="button" aria-expanded="false" aria-controls="results-panel">Resultados</button>
+      <div id="map-legend" role="status" aria-label="Escala de colores"><strong id="legend-title">Elevación</strong><div id="leyenda"><div class="grad"></div><small>Cargando escala…</small></div></div>
       <p id="map-status" role="status">Cargando parcelas…</p>
       <div id="map-summary" aria-live="polite" hidden></div>
     </section>
@@ -76,7 +81,11 @@
         </div>
         <div id="dashboard-loading" class="loading" hidden></div>
         <div id="dashboard-error" class="error" hidden></div>
-        <div id="dashboard-instructions" class="instructions">Seleccione una parcela en el mapa, búsqueda o tabla para ver su dashboard.</div>
+        <div id="dashboard-instructions" class="instructions">
+          <div id="selection-illustration" class="selection-illustration" aria-hidden="true"><svg viewBox="0 0 280 170"><path d="M35 30 105 15 180 35 245 18 245 135 175 152 105 132 35 150Z" fill="#edf4ef" stroke="#b8cebf" stroke-width="2"/><path d="M105 15V132M180 35 175 152" stroke="#b8cebf" stroke-width="2"/><path class="welcome-parcel" d="M120 65 162 73 158 110 116 100Z" fill="#8fc9b2" stroke="#2f826a" stroke-width="2"/><circle class="welcome-pulse" cx="139" cy="88" r="19" fill="none" stroke="#b9984b" stroke-width="2"/><path class="welcome-cursor" d="m154 90 7 30 8-11 13-4Z" fill="#244c42" stroke="#fff" stroke-width="2"/></svg></div>
+          <img id="selection-gif" alt="Selecciona una parcela en el mapa" hidden>
+          <span class="eyebrow">EXPLORA EL TERRITORIO</span><h2>Selecciona una parcela</h2><p>Elige un municipio para acercarte. Después pulsa una parcela para descubrir sus resultados.</p><small>También puedes buscar por ID o consultar la tabla de Parcelas.</small>
+        </div>
         <div id="dashboard-data" hidden></div>
       </div>
     </section>
@@ -86,12 +95,17 @@
     <div class="table-filters" aria-label="Filtros compartidos con el mapa">
       <div class="cohort-control"><span>Conjunto de parcelas</span><button id="table-cohort" type="button" aria-pressed="false" hidden>Parcelas de validación</button><small>Activa para ver solo las 59 con predicción final.</small></div>
       <label for="table-municipality">Municipio<select id="table-municipality"><option value="">Todos los municipios</option></select></label>
+      <label for="table-state">Estado<select id="table-state"><option value="">Todos los estados</option></select></label>
+      <label for="table-population">Conjunto<select id="table-population"><option value="">Todas las parcelas</option><option value="referencia">Entrenamiento · OOF</option><option value="prediccion">Predicción final</option></select></label>
       <label for="table-query">Buscar parcela<input id="table-query" type="search" placeholder="ID o municipio…"></label>
       <label for="table-source">Datos a consultar<select id="table-source"><option value="capas">Capas temáticas</option><option value="resultados">Resultados del modelo</option></select></label>
       <label id="table-layer-label" for="table-layer">Capa<select id="table-layer"></select></label>
       <label id="table-date-label" for="table-date" hidden>Periodo del insumo<select id="table-date"></select></label>
       <label id="table-set-label" for="table-set" hidden>Conjunto y modelo<select id="table-set"></select></label>
       <label id="table-metric-label" for="table-metric" hidden>Métrica<select id="table-metric"></select></label>
+      <label for="table-availability">Disponibilidad del valor<select id="table-availability"><option value="">Todas</option><option value="present">Con dato</option><option value="missing">Sin dato</option></select></label>
+      <label for="table-min">Valor mínimo<input id="table-min" type="number" step="any" placeholder="Sin límite"></label>
+      <label for="table-max">Valor máximo<input id="table-max" type="number" step="any" placeholder="Sin límite"></label>
       <button id="table-reset" type="button" class="secondary-button">Limpiar filtros de parcelas</button>
     </div>
     <p id="table-status" class="table-status" role="status">Cargando parcelas…</p>
@@ -140,6 +154,8 @@
 <script src="config.js"></script>
 <script src="labels.js"></script>
 <script src="parcels.js"></script>
+<script src="regions.js"></script>
+<script src="charts.js"></script>
 <script src="documentation.js"></script>
 <script src="app.js"></script>
 </body>

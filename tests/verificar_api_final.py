@@ -57,6 +57,11 @@ with tempfile.TemporaryDirectory() as tmp:
             assert sum(v is not None for v in data['valores'].values())==count
         assert len([r for r in get('/api/capas') if r['id'].startswith('final_')])==5
         assert len(get('/api/capas/final_prec/fechas'))==7
+        with urllib.request.urlopen(base+'/',timeout=5) as r:page=r.read().decode()
+        assert '>API</a>' not in page and 'id="results-button"' not in page
+        assert 'id="map-legend"' in page and 'id="map-source"' in page
+        for asset in ['regions.js','charts.js']:
+            with urllib.request.urlopen(base+'/'+asset,timeout=5) as r:assert r.read()==(ROOT/'public'/asset).read_bytes()
         for row in [ref,pred]:
             req=urllib.request.Request(base+'/api/parcelas/'+row['ID_POLIGONO']+'/informacion-inteligente',data=b'{}',headers={'Content-Type':'application/json'},method='POST')
             with urllib.request.urlopen(req,timeout=5) as r:explain=json.load(r)
@@ -66,7 +71,7 @@ with tempfile.TemporaryDirectory() as tmp:
         except urllib.error.HTTPError as e:assert e.code==403
         with urllib.request.urlopen(base+'/fuentes/05_final/dashboard_parcelas_prediccion.csv',timeout=5) as r:assert len(r.read())>1000
         docs=get('/api/documentacion')
-        assert len(docs['notebooks'])==4 and len(docs['fuentes'])==8
+        assert len(docs['notebooks'])==4 and len(docs['fuentes'])==10
         for notebook in docs['notebooks']:
             original=json.loads((ROOT/'modelos/libretas_finales'/notebook['archivo']).read_text())
             view=get(notebook['url'])
@@ -86,7 +91,7 @@ with tempfile.TemporaryDirectory() as tmp:
         print('API OK: salud, 197 geometrías, OOF/final, ausencias, SHAP parcial, validación, mapas, clima, mock, descargas y escritura bloqueada.')
         print('AGC_001 OOF:',ref['resultado']['prediccion'],'observado:',ref['resultado']['observado'])
         print('AGC_003 final:',pred['resultado']['prediccion'],'intervalo:',pred['contexto_modelo']['intervalo_empirico80']['inferior'],pred['contexto_modelo']['intervalo_empirico80']['superior'])
-        print('Documentación OK: cuatro libretas completas, descarga original, ocho fuentes, reporte y rutas limitadas por ID.')
+        print('Documentación OK: cuatro libretas completas, descarga original, diez fuentes, reporte y rutas limitadas por ID.')
     finally:
         process.terminate()
         process.communicate(timeout=5)
