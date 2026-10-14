@@ -34,13 +34,23 @@ await assert.rejects(generateGemini({},{env,transport:async()=>{throw Object.ass
 for(const body of [{mimeType:'text/html',audio:'a'}, {mimeType:'audio/webm',audio:'bad'}, {mimeType:'audio/webm',audio:'YQ=='}, {mimeType:'audio/ogg',audio:'A'.repeat(1400004)}]) assert.throws(()=>validateAudio(body));
 assert.equal(validateAudio({mimeType:'audio/mp4',audio:Buffer.alloc(100).toString('base64')}).mimeType,'audio/m4a');
 
-function node() {return {hidden:false,value:'',disabled:false,children:[],attributes:{},style:{},getBoundingClientRect(){return {top:650};},setAttribute(k,v){this.attributes[k]=v;},append(...children){this.children.push(...children);},replaceChildren(){this.children=[];},focus(){this.focused=true;}};}
-const ids=['chat-panel','chat-context','chat-messages','chat-toggle','chat-input','chat-send','chat-form','chat-status','chat-error','chat-mode','chat-close','chat-reset','chat-mic','chat-reopen','container'];
+function node() {return {hidden:false,value:'',disabled:false,children:[],attributes:{},style:{},setAttribute(k,v){this.attributes[k]=v;},append(...children){for(const child of children){if(child.parentNode) child.parentNode.children=child.parentNode.children.filter(c=>c!==child);child.parentNode=this;this.children.push(child);}},contains(child){return child===this || this.children.some(c=>c.contains?.(child));},replaceChildren(){this.children=[];},focus(){this.focused=true;}};}
+const ids=['chat-panel','chat-context','chat-messages','chat-toggle','chat-input','chat-send','chat-form','chat-status','chat-error','chat-mode','chat-close','chat-reset','chat-mic','chat-reopen','container','assistant-dock'];
 const nodes=new Map(ids.map(id=>['#'+id,node()]));nodes.get('#chat-panel').hidden=true;
 const requests=[],listeners=[],pending=[];
 const voiceCalls=[];
 const scope={window:{innerWidth:1280,innerHeight:900,addEventListener(){},createChatVoice:callbacks=>{scope.voiceCallbacks=callbacks;return {cancel(){voiceCalls.push('cancel');},start(){voiceCalls.push('start');}};}},AbortController,document:{querySelector:key=>nodes.get(key),querySelectorAll:()=>[],createElement:()=>node(),body:node(),addEventListener:(name,fn)=>listeners.push({name,fn})},fetch:(url,options)=>{requests.push({url,payload:JSON.parse(options.body),signal:options.signal});return new Promise(resolve=>pending.push(resolve));}};
 vm.createContext(scope);vm.runInContext(readFileSync(new URL('../public/chat.js',import.meta.url),'utf8'),scope);
+assert.equal(nodes.get('#chat-panel').hidden,false,'El asistente se ve al entrar');
+assert(!nodes.get('#chat-input').focused,'Entrar no roba el foco ni abre el teclado');
+assert(nodes.get('#assistant-dock').contains(nodes.get('#chat-panel')));
+assert.equal(nodes.get('#chat-panel').attributes['data-layout'],'docked');
+nodes.get('#container').hidden=true;scope.window.CHAT.viewChanged('tabla');
+assert(scope.document.body.contains(nodes.get('#chat-panel')),'Acompaña en las otras vistas');
+assert.equal(nodes.get('#chat-panel').attributes['data-layout'],'floating');
+nodes.get('#container').hidden=false;scope.window.CHAT.viewChanged('mapa');
+assert(nodes.get('#assistant-dock').contains(nodes.get('#chat-panel')));
+nodes.get('#chat-close').onclick();assert(nodes.get('#chat-panel').hidden);
 nodes.get('#chat-toggle').onclick();assert.equal(nodes.get('#chat-panel').hidden,false);
 assert.equal(requests.length,0,'Abrir el chat no llama al proveedor');
 nodes.get('#chat-input').value='<script>hola</script>';
@@ -57,7 +67,7 @@ scope.window.CHAT.setContext({parcelId:'AGC_003'});
 assert(requests.at(-1).signal.aborted);
 pending.shift()({ok:true,json:async()=>({reply:'respuesta anterior',mode:'live'})});await old;
 assert.equal(log.children.length,1);
-assert(!JSON.stringify(log.children).includes('respuesta anterior'));
+assert(!log.children.some(c=>c.textContent?.includes('respuesta anterior')));
 nodes.get('#chat-input').value='Mi parcela';
 const current=nodes.get('#chat-form').onsubmit({preventDefault(){}});
 assert.equal(requests.at(-1).payload.ID_POLIGONO,'AGC_003');
@@ -66,7 +76,8 @@ pending.shift()({ok:false,status:503,json:async()=>({error:'Falta GEMINI_API_KEY
 assert.equal(nodes.get('#chat-input').value,'Mi parcela');
 assert(!nodes.get('#chat-error').textContent.includes('GEMINI_API_KEY'));
 assert.equal(log.children.length,1,'Un error no rompe la alternancia del historial');
-listeners.find(l=>l.name==='keydown').fn({key:'Escape',preventDefault(){},stopImmediatePropagation(){}});
+nodes.get('#chat-panel').append(nodes.get('#chat-input'));
+listeners.find(l=>l.name==='keydown').fn({key:'Escape',target:nodes.get('#chat-input'),preventDefault(){},stopImmediatePropagation(){}});
 assert(nodes.get('#chat-panel').hidden && nodes.get('#chat-toggle').focused);
 // La selección que aplica el agente conserva su propio turno, sin invalidarse.
 scope.window.DASHBOARD_AGENT={snapshot:()=>({vista:'mapa',capa:'elevacion',metrica:null,filtros:{}}),apply:actions=>{scope.window.CHAT.setContext({parcelId:actions[0].args.id});return ['Parcela '+actions[0].args.id];}};
@@ -83,4 +94,4 @@ assert.equal(requests.at(-1).payload.history[1].content,'Una lectura breve sin r
 pending.shift()({ok:true,json:async()=>({reply:'Continuación',mode:'mock',actions:[]})});await briefFollowup;
 nodes.get('#chat-mic').onclick();assert.equal(voiceCalls.at(-1),'start');
 scope.window.CHAT.close();assert.equal(voiceCalls.at(-1),'cancel');
-console.log('Chat OK: historial/contexto, transporte Gemini simulado, errores, texto seguro, turno con acciones, interpretación y liberación de voz.');
+console.log('Chat OK: panel inicial sin robar foco, plegar, traslado entre vistas, historial/contexto, acciones, interpretación y liberación de voz.');

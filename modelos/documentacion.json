@@ -110,6 +110,12 @@
       "id": "lector-notebooks",
       "archivo": "lib/documentation.js",
       "titulo": "Lectura de notebooks y descargas · JavaScript"
+    },
+    {
+      "id": "layout-fruticebada",
+      "archivo": "public/workspace.css",
+      "titulo": "Layout Fruticebada · mapa, asistente y resultados",
+      "descripcion": "Proporción 65/35, chat integrado y adaptación a móvil."
     }
   ]
 }
