@@ -60,7 +60,9 @@ with tempfile.TemporaryDirectory() as tmp:
         with urllib.request.urlopen(base+'/',timeout=5) as r:page=r.read().decode()
         assert '>API</a>' not in page and 'id="results-button"' not in page
         assert 'id="map-legend"' in page and 'id="map-source"' in page
-        for asset in ['regions.js','charts.js','chat.js','agent-actions.js','dashboard-agent.js','voice.js']:
+        assert '<title>Fruticebada' in page and 'id="assistant-dock"' in page
+        assert ref['dataset']['label'].startswith('Fruticebada')
+        for asset in ['regions.js','charts.js','chat.js','agent-actions.js','dashboard-agent.js','voice.js','workspace.css']:
             with urllib.request.urlopen(base+'/'+asset,timeout=5) as r:assert r.read()==(ROOT/'public'/asset).read_bytes()
         for row in [ref,pred]:
             req=urllib.request.Request(base+'/api/parcelas/'+row['ID_POLIGONO']+'/informacion-inteligente',data=b'{}',headers={'Content-Type':'application/json'},method='POST')
@@ -100,7 +102,7 @@ with tempfile.TemporaryDirectory() as tmp:
         except urllib.error.HTTPError as e:assert e.code==403
         with urllib.request.urlopen(base+'/fuentes/05_final/dashboard_parcelas_prediccion.csv',timeout=5) as r:assert len(r.read())>1000
         docs=get('/api/documentacion')
-        assert len(docs['notebooks'])==4 and len(docs['fuentes'])==17
+        assert len(docs['notebooks'])==4 and len(docs['fuentes'])==18
         for notebook in docs['notebooks']:
             original=json.loads((ROOT/'modelos/libretas_finales'/notebook['archivo']).read_text())
             view=get(notebook['url'])
@@ -120,7 +122,7 @@ with tempfile.TemporaryDirectory() as tmp:
         print('API OK: salud, 197 geometrías, OOF/final, ausencias, SHAP parcial, validación, mapas, clima, mock, descargas y escritura bloqueada.')
         print('AGC_001 OOF:',ref['resultado']['prediccion'],'observado:',ref['resultado']['observado'])
         print('AGC_003 final:',pred['resultado']['prediccion'],'intervalo:',pred['contexto_modelo']['intervalo_empirico80']['inferior'],pred['contexto_modelo']['intervalo_empirico80']['superior'])
-        print('Documentación OK: cuatro libretas completas, descarga original, diecisiete fuentes, reporte y rutas limitadas por ID.')
+        print('Documentación OK: cuatro libretas completas, descarga original, dieciocho fuentes, reporte y rutas limitadas por ID.')
         print('Chat OK: contexto real del conjunto/OOF/final, seguimiento, validación de mensajes y rechazo de datos inventados por el cliente.')
         limited=False
         for attempt in range(13):

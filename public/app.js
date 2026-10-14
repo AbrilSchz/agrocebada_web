@@ -150,7 +150,7 @@ $('#table-metric').onchange=e=>{$('#results-metric').value=e.target.value;return
 $('#table-export').onclick=()=>{
   const rows=window.PARCELS.sort(visibleFeatures(),{...tableSort,values:valores});
   const url=URL.createObjectURL(new Blob(['\ufeff'+window.PARCELS.csv(rows,valores,tableValueLabel() || 'Valor')],{type:'text/csv;charset=utf-8'}));
-  const a=document.createElement('a');a.href=url;a.download='agrocebada-parcelas.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  const a=document.createElement('a');a.href=url;a.download='fruticebada-parcelas.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 L.DomEvent.disableClickPropagation($('#map-tools'));
 L.DomEvent.disableClickPropagation($('#map-navigation'));
@@ -200,8 +200,15 @@ function toggleLayers(open) {
   $('#layers-panel').hidden = !open;
   $('#layers-button').setAttribute('aria-expanded', String(open));
 }
-window.CHAT?.onOpen(()=>toggleLayers(false));
-$('#layers-button').onclick=()=>{const open=$('#layers-panel').hidden;if(open) window.CHAT?.close();toggleLayers(open);};
+$('#layers-button').onclick=()=>toggleLayers($('#layers-panel').hidden);
+$('#layers-close').onclick=()=>{toggleLayers(false);$('#layers-button').focus();};
+$('#map-reset').onclick=()=>$('#table-reset').onclick();
+document.querySelectorAll('[data-workspace-target]').forEach(button=>button.onclick=()=>{
+  const id=button.dataset.workspaceTarget;
+  if(id==='assistant-dock') window.CHAT?.open();
+  $('#'+id).scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',block:'start'});
+  if(id==='dashboard-results') $('#'+id).focus({preventScroll:true});
+});
 L.DomEvent.disableClickPropagation($('#layers-panel'));
 L.DomEvent.disableScrollPropagation($('#layers-panel'));
 L.DomEvent.disableClickPropagation($('#layers-button'));
@@ -307,12 +314,13 @@ if(C.gifSeleccionParcela && !window.matchMedia?.('(prefers-reduced-motion: reduc
   gif.onerror=()=>{gif.hidden=true;$('#selection-illustration').hidden=false;};
 }
 function dashboardState(state, message = '') {
+  $('#ai-hero').hidden=state!=='data';
   $('#dashboard-loading').hidden = state !== 'loading';
   $('#dashboard-error').hidden = state !== 'error';
   $('#dashboard-instructions').hidden = state !== 'instructions';
   $('#dashboard-data').hidden = state !== 'data';
   $('#info-button').disabled = state !== 'data';
-  $('#ai-caption').textContent = state === 'data' ? `Analiza los resultados de la parcela ${currentDashboard.ID_POLIGONO}.` : state === 'loading' ? message : 'Selecciona una parcela con resultados para activar el análisis.';
+  $('#ai-caption').textContent = state === 'data' ? `Haz clic aquí para interpretar ${currentDashboard.ID_POLIGONO} en el chat.` : state === 'loading' ? message : 'Selecciona una parcela con resultados para activar el análisis.';
   if (state === 'loading') $('#dashboard-loading').textContent = message;
   if (state === 'error') $('#dashboard-error').textContent = message;
 }
@@ -377,15 +385,15 @@ function updateDashboard(data) {
   $('#dashboard-data').innerHTML=`<div class="dashboard-heading"><div><span class="eyebrow">${esc(ctx?.municipio || 'RESULTADO POR PARCELA')}</span><h1>${esc(data.ID_POLIGONO)}</h1></div><span class="cohort-badge ${ctx?.cohorte==='prediccion' ? 'cohort-final' : 'cohort-reference'}">${esc(cohort)}</span></div>
     <p class="parcel-meta">${esc(data.dataset.label)} · Ensamble KNN + HGB${r.esquema_oof ? `<br>${esc(P.scheme(r.esquema_oof))} · promedio de tres repeticiones.` : ''}</p>
     <div class="metrics">${metric('Predicción',r.prediccion,'prediction')}${metric('Observado',r.observado,'observed')}${metric('Error firmado',m.error_firmado_t_ha,'signed')}${metric('Error absoluto',m.error_absoluto_t_ha,'absolute')}${metric('Error relativo',m.error_relativo_pct,'relative','%')}</div>
-    ${ctx?.componentes && hasNumber(ctx.componentes.knn) && hasNumber(ctx.componentes.hgb) ? `<div class="model-context component-context"><span class="eyebrow">DOS COMPONENTES · PESOS 50 / 50</span><div class="component-values"><div><span>KNN espacial</span><strong>${number(ctx.componentes.knn)} <small>t/ha</small></strong></div><span class="component-plus">+</span><div><span>HGB</span><strong>${number(ctx.componentes.hgb)} <small>t/ha</small></strong></div></div><small>${esc(ctx.componentes.alcance)}</small></div>` : ''}
-    ${interval && hasNumber(interval.inferior) && hasNumber(interval.superior) ? `<div class="model-context interval-context"><span class="eyebrow">INTERVALO EMPÍRICO · NOMINAL 80 %</span><p class="interval-value">${number(interval.inferior)} — ${number(interval.superior)} <small>t/ha</small></p><p>Referencia más cercana: <strong>${number(interval.distancia_referencia_m,0)} m</strong></p><small>Rango orientativo basado en errores de validación; no garantiza cobertura.</small></div>` : ''}
-    ${ctx?.vecinos_referencia?.length ? `<details class="data-details"><summary>Parcelas de referencia cercanas</summary><p>Tres vecinos por distancia haversine. El componente KNN utiliza cinco vecinos sobre coordenadas escaladas.</p><div class="table-wrap"><table><thead><tr><th>Parcela</th><th>Distancia (m)</th><th>Observado (t/ha)</th></tr></thead><tbody>${ctx.vecinos_referencia.map(n=>`<tr><td><button type="button" class="parcel-link" data-neighbor-id="${esc(n.ID_POLIGONO)}">${esc(n.ID_POLIGONO)}</button></td><td>${number(n.distancia_m,0)}</td><td>${number(n.observado)}</td></tr>`).join('')}</tbody></table></div></details>` : ''}
     <div class="chart-context"><span>Explora la parcela</span><span>Rendimiento cerrado · ${esc(unit)}</span></div>
     ${tabs.length ? `<div class="charts-shell"><div class="chart-tabs" role="tablist" aria-label="Gráficas de la parcela">${tabs.map(([id,name])=>`<button id="tab-${id}" type="button" role="tab" data-chart-tab="${id}" aria-controls="panel-${id}">${esc(name)}</button>`).join('')}</div>
     ${available.rendimiento ? `<div id="panel-rendimiento" class="chart" role="tabpanel" data-chart-panel="rendimiento" aria-labelledby="tab-rendimiento"><h3>Rendimiento de esta parcela</h3><div id="chart1"></div><small>${r.tipo_prediccion==='oof' ? 'Predicción fuera de muestra y rendimiento observado.' : 'Resultado del modelo final.'} Valores en ${esc(unit)}.</small></div>` : ''}
     ${available.errores ? `<div id="panel-errores" class="chart" role="tabpanel" data-chart-panel="errores" aria-labelledby="tab-errores" hidden><h3>Diferencia respecto al observado</h3><div id="chart2"></div><small>Positivo: sobreestimación. Negativo: subestimación.</small></div>` : ''}
     ${available.aportes ? `<div id="panel-aportes" class="chart" role="tabpanel" data-chart-panel="aportes" aria-labelledby="tab-aportes" hidden><h3>${ctx?.shap_hgb_parcial?.length ? 'Aportes del componente HGB' : 'Aportes a la predicción'}</h3><div id="chart3"></div><small>Las contribuciones del modelo no prueban causalidad.</small>${explanationTable(data)}</div>` : ''}
     ${available.modelo ? `<div id="panel-modelo" class="chart" role="tabpanel" data-chart-panel="modelo" aria-labelledby="tab-modelo" hidden>${modelPanel(data)}</div>` : ''}</div>` : ''}
+    ${ctx?.componentes && hasNumber(ctx.componentes.knn) && hasNumber(ctx.componentes.hgb) ? `<div class="model-context component-context"><span class="eyebrow">DOS COMPONENTES · PESOS 50 / 50</span><div class="component-values"><div><span>KNN espacial</span><strong>${number(ctx.componentes.knn)} <small>t/ha</small></strong></div><span class="component-plus">+</span><div><span>HGB</span><strong>${number(ctx.componentes.hgb)} <small>t/ha</small></strong></div></div><small>${esc(ctx.componentes.alcance)}</small></div>` : ''}
+    ${interval && hasNumber(interval.inferior) && hasNumber(interval.superior) ? `<div class="model-context interval-context"><span class="eyebrow">INTERVALO EMPÍRICO · NOMINAL 80 %</span><p class="interval-value">${number(interval.inferior)} — ${number(interval.superior)} <small>t/ha</small></p><p>Referencia más cercana: <strong>${number(interval.distancia_referencia_m,0)} m</strong></p><small>Rango orientativo basado en errores de validación; no garantiza cobertura.</small></div>` : ''}
+    ${ctx?.vecinos_referencia?.length ? `<details class="data-details"><summary>Parcelas de referencia cercanas</summary><p>Tres vecinos por distancia haversine. El componente KNN utiliza cinco vecinos sobre coordenadas escaladas.</p><div class="table-wrap"><table><thead><tr><th>Parcela</th><th>Distancia (m)</th><th>Observado (t/ha)</th></tr></thead><tbody>${ctx.vecinos_referencia.map(n=>`<tr><td><button type="button" class="parcel-link" data-neighbor-id="${esc(n.ID_POLIGONO)}">${esc(n.ID_POLIGONO)}</button></td><td>${number(n.distancia_m,0)}</td><td>${number(n.observado)}</td></tr>`).join('')}</tbody></table></div></details>` : ''}
     ${measurements.length ? `<details class="data-details"><summary>Mediciones y capas de la parcela</summary><div class="table-wrap"><table><thead><tr><th>Capa</th><th>Periodo</th><th>Valor</th><th>Unidad</th></tr></thead><tbody>${measurements.map(x=>`<tr><td>${esc(x.capa || P.variable(x.capa_id))}</td><td>${esc(P.date(x.fecha))}</td><td>${number(x.valor,3)}</td><td>${esc(x.unidad || '')}</td></tr>`).join('')}</tbody></table></div></details>` : ''}`;
   if(available.rendimiento) renderChart1(data);
   if(available.errores) renderChart2(data);

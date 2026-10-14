@@ -4,10 +4,10 @@
   function error(message) {$('#chat-error').textContent=message;$('#chat-error').hidden=false;}
   function render() {
     const log=$('#chat-messages');log.replaceChildren();
-    if(!messages.length) {const p=document.createElement('p');p.className='chat-welcome';p.textContent='Pregunta por tus datos o pide una acción: «selecciona la parcela AGC_003», «muestra la elevación» o «abre la tabla de parcelas».';log.append(p);}
+    if(!messages.length) {const p=document.createElement('p');p.className='chat-welcome';p.textContent='Explora sin complicarte. Puedo encontrar una parcela, cambiar el mapa o ayudarte a interpretar sus resultados. Escribe, habla o elige una opción.';log.append(p);}
     for(const item of messages) {
       const article=document.createElement('article');article.className='chat-message chat-'+item.role;
-      const author=document.createElement('span');author.className='chat-author';author.textContent=item.role==='user' ? 'Tú' : 'AgroCebada';
+      const author=document.createElement('span');author.className='chat-author';author.textContent=item.role==='user' ? 'Tú' : 'Fruticebada';
       const text=document.createElement('p');text.textContent=item.content;article.append(author,text);
       if(item.actions?.length) {const list=document.createElement('p');list.className='chat-applied';list.textContent='Acciones enviadas: '+item.actions.join(' · ');article.append(list);}
       log.append(article);
@@ -30,17 +30,20 @@
   function setContext(value) {
     const next={parcelId:value.parcelId || null,campaign:value.campaign || 'agrocebada-final',model:value.model || 'ensamble-50-50-v1'};
     if(JSON.stringify(context)!==JSON.stringify(next)) {context=next;if(!applying) reset();}
-    $('#chat-context').textContent=(context.parcelId ? 'Parcela '+context.parcelId : 'Conjunto completo')+' · '+context.model;
+    $('#chat-context').textContent=context.parcelId ? 'Conversando sobre '+context.parcelId : 'Explorando todas las parcelas';
   }
   function position() {
-    const panel=$('#chat-panel'),rect=$('#chat-toggle').getBoundingClientRect();
-    const onMap=!$('#container').hidden,small=window.innerWidth<=700;
-    const bottom=onMap && !small ? Math.max(20,window.innerHeight-rect.top+10) : 20;
-    panel.style.bottom=bottom+'px';panel.style.maxHeight=Math.max(190,Math.min(520,window.innerHeight-bottom-76))+'px';
+    const panel=$('#chat-panel'),onMap=!$('#container').hidden;
+    // En el mapa ocupa su propio espacio; en las otras vistas acompaña como ventana.
+    (onMap ? $('#assistant-dock') : document.body).append(panel);
+    panel.setAttribute('data-layout',onMap ? 'docked' : 'floating');
+    panel.setAttribute('role',onMap ? 'region' : 'dialog');
+    panel.style.bottom='';panel.style.maxHeight='';
   }
   function toggle(open,focus=true) {
     $('#chat-panel').hidden=!open;$('#chat-toggle').setAttribute('aria-expanded',String(open));$('#chat-reopen').setAttribute('aria-expanded',String(open));
-    if(open) {onOpen?.();position();$('#chat-input').focus();}else {voice.cancel();if(focus) ($('#container').hidden ? $('#chat-reopen') : $('#chat-toggle')).focus();}
+    $('#chat-toggle').hidden=open;
+    if(open) {onOpen?.();position();if(focus) $('#chat-input').focus();}else {voice.cancel();if(focus) ($('#container').hidden ? $('#chat-reopen') : $('#chat-toggle')).focus();}
   }
   function history() {
     const rows=messages.slice(-12).map(item=>({role:item.role,content:item.content.slice(0,2000)}));
@@ -78,13 +81,11 @@
   $('#chat-form').onsubmit=e=>{e.preventDefault();return submit();};
   $('#chat-input').onkeydown=e=>{if(e.key==='Enter' && !e.shiftKey && !e.isComposing) {e.preventDefault();submit();}};
   document.querySelectorAll('[data-chat-question]').forEach(button=>button.onclick=()=>{if(busy) return;$('#chat-input').value=button.dataset.chatQuestion;return submit();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape' && !$('#chat-panel').hidden) {e.preventDefault();e.stopImmediatePropagation();toggle(false);}},true);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape' && !$('#chat-panel').hidden && ($('#container').hidden || $('#chat-panel').contains(e.target))) {e.preventDefault();e.stopImmediatePropagation();toggle(false);}},true);
   window.addEventListener('resize',position);
-  // El chat permanece abierto al pasar del mapa a la tabla o la documentación.
-  document.body.append($('#chat-panel'));
-  window.CHAT={setContext,close:()=>toggle(false,false),onOpen:callback=>{onOpen=callback;},
-    viewChanged:view=>{$('#chat-reopen').hidden=view==='mapa';if(!$('#chat-panel').hidden) position();},
+  window.CHAT={setContext,open:()=>toggle(true),close:()=>toggle(false,false),onOpen:callback=>{onOpen=callback;},
+    viewChanged:view=>{$('#chat-reopen').hidden=view==='mapa';position();},
     openExplanation:(text,mode)=>{if(typeof text!=='string' || !text.trim()) return;reset();messages=[{role:'user',content:'Interpreta esta parcela en un párrafo breve, sin repetir las tarjetas.'},{role:'assistant',content:text}];modeLabel(mode);render();toggle(true);}
   };
-  setContext(context);render();
+  setContext(context);render();toggle(true,false);
 })();

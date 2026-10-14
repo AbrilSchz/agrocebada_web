@@ -1,10 +1,43 @@
-# AgroCebada · Dashboard de rendimiento y contexto espacial
+# Fruticebada · Dashboard de rendimiento y contexto espacial
 
 Explora 197 parcelas y los resultados finales recibidos en `Libretas_finales.zip`.
 El mapa abre en **Satelital**. El rendimiento mostrado es un resultado cerrado en
 **toneladas por hectárea (t/ha)**: no es una serie anual ni una sucesión de campañas.
 Las fechas de abril–octubre de 2025 corresponden a los insumos, no a varios
 rendimientos de la misma parcela.
+
+## Espacio de trabajo Fruticebada
+
+En escritorio, a partir de 981 px de ancho, el mapa ocupa **65 %** y la columna
+de asistente y resultados **35 %**. El asistente está abierto al entrar, sin
+activar el micrófono, pedir al modelo una respuesta ni enfocar el campo de texto.
+Su botón de plegado libera espacio para la ficha y permite volver a abrirlo.
+La ficha tiene desplazamiento independiente; el mapa y el asistente permanecen
+a mano mientras se consultan las gráficas y las tablas.
+
+La interfaz presenta primero las tarjetas de rendimiento y las gráficas, seguidas
+de componentes, intervalos y referencias. **Interpretar mi parcela** conserva
+AI ANALYTICS y abre la lectura breve dentro del mismo chat. Se muestra cuando hay
+una ficha cargada; las pestañas siguen dependiendo de los datos disponibles.
+
+El panel **Capas y resultados** agrupa los filtros y la apariencia del mapa en
+apartados desplegables. Tiene cierre explícito y un botón para limpiar filtros.
+Puede usarse junto al chat: no se cierran entre sí. La escala permanece abajo a
+la izquierda del mapa y la búsqueda por ID está en la cabecera.
+
+En tablet y móvil, mapa, asistente y ficha se apilan para conservar el ancho de
+lectura. Una barra ofrece accesos a **Mapa**, **Resultados** y **Asistente**.
+En las vistas de tabla y documentación, el chat se convierte en una ventana
+flotante conservando la conversación; al volver al mapa se reintegra en su columna.
+El teclado, los indicadores de foco y la preferencia de movimiento reducido
+continúan disponibles.
+
+`public/workspace.css`, cargado después de `style.css`, contiene el layout y la
+identidad visual. La marca visible, el nombre de la aplicación npm y la descarga
+de la tabla usan Fruticebada. Se conservan `agrocebada-final`, los IDs `AGC_*`,
+la URL del repositorio y los nombres originales del reporte y notebooks para
+mantener compatibles las fuentes y consultas existentes. La etiqueta del conjunto
+se actualiza al servirla; no se modifica SQLite para cambiar la marca.
 
 Al iniciar, **Elevación** ya está seleccionada sobre el fondo satelital. El botón
 **Parcelas de validación**, a la izquierda de Capas y resultados, conserva su nombre activado
@@ -31,11 +64,12 @@ parcela seleccionada conserva 3 px; los normales, 1.5 px si están activados.
 
 ## Chat y agente de la web
 
-**Chat con IA** está encima de la escala de colores. Sus botones rápidos permiten
+**Tu asistente de campo** está integrado en la columna derecha. Sus botones rápidos permiten
 mostrar las 59 parcelas de validación, elevación, predicción, tabla y limpiar
 filtros; también explican OOF y SHAP. Al abrir el chat no se llama al modelo.
 Los botones envían su instrucción directamente. Enter envía y Shift+Enter añade
-un salto de línea. Escape cierra el chat. Al pasar a tabla o documentación, el chat
+un salto de línea. Escape pliega el chat cuando el foco está dentro de él; en su
+ventana flotante también lo cierra. Al pasar a tabla o documentación, el chat
 sigue abierto y un botón flotante permite reabrirlo.
 
 Puedes pedir, por ejemplo, «selecciona la parcela AGC_003», «muestra la elevación»

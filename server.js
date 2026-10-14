@@ -115,7 +115,9 @@ function requireDashboardSchema() {
 }
 function importMetadata(campaign, model) {
   if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='modelo_importaciones'").get()) return null;
-  return db.prepare('SELECT * FROM modelo_importaciones WHERE campana=? AND version_modelo=?').get(campaign,model) || null;
+  const row=db.prepare('SELECT * FROM modelo_importaciones WHERE campana=? AND version_modelo=?').get(campaign,model);
+  // La marca se actualiza al presentar los datos; los identificadores y la fuente no cambian.
+  return row ? {...row,label:row.label?.replace(/\bAgroCebada\b/gi,'Fruticebada')} : null;
 }
 const optionalTables = new Set(db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(r=>r.name));
 const modelSummaries = new Map();
@@ -234,7 +236,7 @@ function getChatContext(id,selectors) {
     const name=JSON.parse(row.contenido_json).municipio;if(name) municipalities.set(name,(municipalities.get(name)||0)+1);
   }
   return {alcance:'conjunto',campaña:campaign,version_modelo:model,unidad_rendimiento:'t/ha',
-    dataset:{id:metadata?.dataset_id || campaign,label:process.env.DATASET_LABEL || metadata?.label || 'AgroCebada',demonstration:process.env.DEMO_MODE==='1',temporal:false,validation_status:summary.estado},
+    dataset:{id:metadata?.dataset_id || campaign,label:process.env.DATASET_LABEL || metadata?.label || 'Fruticebada',demonstration:process.env.DEMO_MODE==='1',temporal:false,validation_status:summary.estado},
     municipios:Object.fromEntries(municipalities),modelo:{...summary,importancias_globales:summary.importancias_globales.slice(0,10)}};
 }
 function agentCatalogue(context) {
@@ -326,6 +328,6 @@ registerDocumentation(app,__dirname);
 app.use((error,_req,res,_next)=>res.status(error.status || 500).json({error:error.status===413 ? 'La solicitud es demasiado grande' : error.type==='entity.parse.failed' ? 'JSON inválido' : 'No se pudo procesar la solicitud'}));
 app.use('/fuentes', express.static(path.join(__dirname, 'modelos', 'libretas_finales', 'Data')));
 app.use(express.static(path.join(__dirname, 'public')));
-app.listen(PORT, () => console.log(`AgroCebada web en http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Fruticebada web en http://localhost:${PORT}`));
 
 

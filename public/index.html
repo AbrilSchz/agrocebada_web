@@ -2,24 +2,26 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AgroCebada · Dashboard de parcelas</title>
+<title>Fruticebada · Explora tu parcela</title>
+<meta name="description" content="Explora parcelas, compara rendimientos y consulta tus datos agrícolas con el asistente de Fruticebada.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="workspace.css">
 </head>
 <body>
 <header class="nav">
-  <strong class="brand">🌾 AgroCebada</strong>
+  <a class="brand" href="#mapa" data-v="mapa" aria-label="Fruticebada, ir al mapa"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 25V13M16 19C7 20 5 13 6 8c8-1 12 4 10 11ZM16 15C15 7 21 4 27 5c0 7-4 11-11 10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Fruticebada</strong><small>Inteligencia agrícola</small></span></a>
   <nav aria-label="Vistas">
     <a href="#mapa" class="active" data-v="mapa">Mapa</a>
     <a href="#tabla" data-v="tabla">Parcelas</a>
     <a href="#documentacion" data-v="documentacion">Documentación</a>
   </nav>
-  <label class="sr-only" for="buscar">Buscar parcela por ID</label>
-  <input id="buscar" placeholder="Buscar ID_POLIGONO…" list="ids">
+  <div class="global-search"><label for="buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span class="sr-only">Buscar parcela por ID</span></label><input id="buscar" type="search" placeholder="Busca una parcela · AGC_003" list="ids" autocomplete="off"></div>
   <datalist id="ids"></datalist>
 </header>
 <main>
   <div id="container" class="vista">
+    <nav id="mobile-workspace" aria-label="Herramientas del mapa"><button type="button" data-workspace-target="mapa">Mapa</button><button type="button" data-workspace-target="dashboard-results">Resultados</button><button type="button" data-workspace-target="assistant-dock">✦ Asistente</button></nav>
     <section id="mapa" aria-label="Mapa de parcelas">
       <div id="map"></div>
       <div id="map-tools">
@@ -28,7 +30,7 @@
       </div>
       <div id="map-navigation"><button id="region-home" type="button">← Ver región</button><span id="region-caption">Municipio → parcela</span></div>
       <div id="layers-panel" hidden>
-        <div class="panel-heading"><span class="eyebrow">EXPLORAR EL MAPA</span><strong>Capas y resultados</strong></div>
+        <div class="panel-heading"><div><span class="eyebrow">PERSONALIZA TU VISTA</span><strong>Capas y resultados</strong></div><button id="layers-close" type="button" aria-label="Cerrar capas y resultados">×</button></div>
         <label for="map-source">Colorear por</label>
         <select id="map-source"><option value="capas">Capas temáticas</option><option value="resultados">Resultados del modelo</option></select>
         <div id="thematic-controls">
@@ -44,10 +46,7 @@
           <label for="results-metric">Métrica<select id="results-metric"><option value="prediccion">Predicción</option><option value="observado">Observado</option><option value="error_firmado_t_ha">Error firmado</option><option value="error_absoluto_t_ha">Error absoluto</option></select></label>
           <p id="results-caption" role="status"></p><p id="results-error" class="error" hidden></p>
         </section>
-        <h4>Mapa base</h4>
-        <label><input type="radio" name="base" value="calles"> Calles</label>
-        <label><input type="radio" name="base" value="sat" checked> Satelital</label>
-        <h4>Filtrar parcelas</h4>
+        <details class="map-settings" open><summary>Filtrar parcelas</summary>
         <label for="map-state">Estado</label><select id="map-state"><option value="">Todos los estados</option></select>
         <label for="map-cohort">Conjunto</label><select id="map-cohort"><option value="">Todas las parcelas</option><option value="referencia">Entrenamiento · OOF</option><option value="prediccion">Predicción final</option></select>
         <label for="map-municipality">Municipio</label>
@@ -56,16 +55,27 @@
         <input id="map-query" type="search" placeholder="ID o municipio…">
         <label for="map-availability">Disponibilidad del valor</label><select id="map-availability"><option value="">Todas</option><option value="present">Con dato</option><option value="missing">Sin dato</option></select>
         <div class="range-filter"><label for="map-min">Valor mínimo<input id="map-min" type="number" step="any" placeholder="Sin límite"></label><label for="map-max">Valor máximo<input id="map-max" type="number" step="any" placeholder="Sin límite"></label></div>
+        <button id="map-reset" class="secondary-button" type="button">Limpiar filtros</button></details>
+        <details class="map-settings"><summary>Apariencia del mapa</summary>
+        <h4>Mapa base</h4>
+        <label><input type="radio" name="base" value="calles"> Calles</label>
+        <label><input type="radio" name="base" value="sat" checked> Satelital</label>
         <label for="opacidad">Opacidad</label>
         <input id="opacidad" type="range" min="0" max="1" step="0.05" value="0.75">
         <label><input id="contornos" type="checkbox" checked> Mostrar contornos</label>
         <label class="admin-toggle"><input id="administrative-borders" type="checkbox" checked> Estados y municipios seleccionados</label>
         <p id="administrative-status" role="status" hidden></p>
+        </details>
         <p id="layers-error" class="error" hidden></p>
       </div>
-      <div id="map-assistant">
-        <section id="chat-panel" role="dialog" aria-modal="false" aria-labelledby="chat-title" hidden>
-          <div class="chat-heading"><div><span class="eyebrow">CONVERSA CON TUS DATOS</span><h2 id="chat-title">Chat AgroCebada</h2></div><button id="chat-close" type="button" aria-label="Cerrar chat">×</button></div>
+        <div id="map-legend" role="status" aria-label="Escala de colores"><strong id="legend-title">Elevación</strong><div id="leyenda"><div class="grad"></div><small>Cargando escala…</small></div></div>
+      <p id="map-status" role="status">Cargando parcelas…</p>
+      <div id="map-summary" aria-live="polite" hidden></div>
+    </section>
+    <section id="dashboard" aria-label="Asistente y resultados de la parcela">
+      <div id="assistant-dock" aria-label="Asistente de Fruticebada">
+        <section id="chat-panel" role="region" aria-labelledby="chat-title" hidden>
+          <div class="chat-heading"><div><span class="eyebrow">FRUTICEBADA · ASISTENTE IA</span><h2 id="chat-title">Tu asistente de campo</h2></div><button id="chat-close" type="button" aria-label="Plegar asistente" title="Plegar para ver más resultados">⌃</button></div>
           <p id="chat-context">Conjunto completo</p>
           <div id="chat-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
           <div class="chat-suggestions" aria-label="Acciones y preguntas rápidas">
@@ -78,22 +88,18 @@
             <button type="button" data-chat-question="¿Qué explica SHAP y qué limitaciones tiene?">Entender SHAP</button>
           </div>
           <p id="chat-status" role="status" hidden></p><p id="chat-error" role="alert" hidden></p>
-          <form id="chat-form"><label class="sr-only" for="chat-input">Pregunta sobre los datos</label><textarea id="chat-input" rows="2" maxlength="1500" placeholder="Pregunta o pide una acción…" required></textarea><button id="chat-mic" type="button" aria-label="Dar un comando por voz" aria-pressed="false" title="Habla, pulsa detener y envía el comando">🎙</button><button id="chat-send" type="submit" aria-label="Enviar pregunta">↗</button></form>
-          <p class="chat-voice-note">Pulsa 🎙 para hablar. Al detener, el audio se envía a Google para transcribirlo; la frase se envía al chat.</p>
+          <form id="chat-form"><label class="sr-only" for="chat-input">Pregunta sobre los datos</label><textarea id="chat-input" rows="2" maxlength="1500" placeholder="¿Qué quieres explorar?" required></textarea><button id="chat-mic" type="button" aria-label="Dar un comando por voz" aria-pressed="false" title="Habla, pulsa detener y envía el comando">🎙</button><button id="chat-send" type="submit" aria-label="Enviar pregunta">↗</button></form>
+          <p class="chat-voice-note">Voz: el audio se envía a Google para transcribir tu comando.</p>
           <div class="chat-footer"><span id="chat-mode">Consulta tus datos</span><button id="chat-reset" type="button">Nueva conversación</button></div>
         </section>
-        <button id="chat-toggle" type="button" aria-expanded="false" aria-controls="chat-panel"><span aria-hidden="true">✦</span> Chat con IA <span aria-hidden="true">↗</span></button>
-        <div id="map-legend" role="status" aria-label="Escala de colores"><strong id="legend-title">Elevación</strong><div id="leyenda"><div class="grad"></div><small>Cargando escala…</small></div></div>
+        <button id="chat-toggle" type="button" aria-expanded="false" aria-controls="chat-panel"><span class="assistant-spark" aria-hidden="true">✦</span><span><strong>Tu asistente de campo</strong><small>Pregunta, filtra o navega con tu voz</small></span><span aria-hidden="true">⌄</span></button>
       </div>
-      <p id="map-status" role="status">Cargando parcelas…</p>
-      <div id="map-summary" aria-live="polite" hidden></div>
-    </section>
-    <section id="dashboard" aria-label="Dashboard de la parcela" aria-live="polite">
+      <div id="dashboard-results" tabindex="-1">
+        <div class="workspace-heading"><div><span class="eyebrow">TU PARCELA, EN DETALLE</span><h2>Resultados de la parcela</h2></div><span class="workspace-dot" aria-hidden="true"></span></div>
       <div id="dashboard-content">
-        <div class="ai-hero">
-          <span class="eyebrow">INTELIGENCIA PARA TU PARCELA</span>
+        <div id="ai-hero" class="ai-hero" hidden>
           <button id="info-button" class="info-button" type="button" disabled aria-describedby="ai-caption">
-            <span class="ai-mark" aria-hidden="true">✦</span><span class="ai-button-copy"><strong>AI ANALYTICS</strong><span>Explora lo que cuentan tus datos</span><span class="ai-cta">Haz clic aquí ↗</span></span><span class="ai-arrow" aria-hidden="true">↗</span>
+            <span class="ai-mark" aria-hidden="true">✦</span><span class="ai-button-copy"><strong>Interpretar mi parcela</strong><span>AI ANALYTICS · Una lectura breve en el chat</span></span><span class="ai-arrow" aria-hidden="true">↗</span>
           </button>
           <p id="ai-caption">Selecciona una parcela para activar el análisis.</p>
           <div id="info-loading" class="loading" role="status" hidden><span class="loading-orbit" aria-hidden="true"></span>Generando análisis…</div>
@@ -105,9 +111,10 @@
         <div id="dashboard-instructions" class="instructions">
           <div id="selection-illustration" class="selection-illustration" aria-hidden="true"><svg viewBox="0 0 280 170"><path d="M35 30 105 15 180 35 245 18 245 135 175 152 105 132 35 150Z" fill="#edf4ef" stroke="#b8cebf" stroke-width="2"/><path d="M105 15V132M180 35 175 152" stroke="#b8cebf" stroke-width="2"/><path class="welcome-parcel" d="M120 65 162 73 158 110 116 100Z" fill="#8fc9b2" stroke="#2f826a" stroke-width="2"/><circle class="welcome-pulse" cx="139" cy="88" r="19" fill="none" stroke="#b9984b" stroke-width="2"/><path class="welcome-cursor" d="m154 90 7 30 8-11 13-4Z" fill="#244c42" stroke="#fff" stroke-width="2"/></svg></div>
           <img id="selection-gif" alt="Selecciona una parcela en el mapa" hidden>
-          <span class="eyebrow">EXPLORA EL TERRITORIO</span><h2>Selecciona una parcela</h2><p>Elige un municipio para acercarte. Después pulsa una parcela para descubrir sus resultados.</p><small>También puedes buscar por ID o consultar la tabla de Parcelas.</small>
+          <span class="eyebrow">EXPLORA EL TERRITORIO</span><h2>Selecciona una parcela</h2><p>Elige un municipio para acercarte. Después pulsa una parcela para descubrir sus resultados.</p><ol class="selection-steps"><li><span>1</span>Elige un municipio</li><li><span>2</span>Selecciona una parcela</li><li><span>3</span>Explora sus resultados</li></ol><small>O pídele al asistente que encuentre una parcela por ti.</small>
         </div>
         <div id="dashboard-data" hidden></div>
+      </div>
       </div>
     </section>
   </div>
@@ -145,13 +152,13 @@
     </div>
     <section id="doc-panel-reto" class="doc-panel" role="tabpanel" aria-labelledby="doc-tab-reto">
       <h2>Predecir rendimiento de cebada a partir del territorio</h2>
-      <p>El proyecto AgroCebada combina mediciones satelitales, clima y topografía para estimar el rendimiento por parcela. Las 138 parcelas con rendimiento conocido sirven para desarrollar y evaluar los modelos; el modelo final estima las otras 59.</p>
+      <p>El proyecto Fruticebada combina mediciones satelitales, clima y topografía para estimar el rendimiento por parcela. Las 138 parcelas con rendimiento conocido sirven para desarrollar y evaluar los modelos; el modelo final estima las otras 59.</p>
       <div class="doc-cards"><article><span class="eyebrow">INSUMOS</span><h3>Abril–octubre de 2025</h3><p>La ventana de los insumos es temporal. El rendimiento que mostramos es un único resultado cerrado en toneladas por hectárea.</p></article><article><span class="eyebrow">PREGUNTA CENTRAL</span><h3>¿Funciona en zonas nuevas?</h3><p>Comparamos validación con parcelas intercaladas y validación por grupos espaciales. La ubicación puede ayudar a interpolar sin demostrar que el modelo generaliza a otro municipio.</p></article></div>
       <p>El material no aporta fechas de siembra, dosis de fertilización ni identidad de productores. Compartir municipio no demuestra compartir manejo o condiciones.</p>
       <p class="doc-source">Descripción basada en las libretas y el reporte recibidos. <a href="/documentacion/archivos/reporte" download>Descargar reporte metodológico</a>.</p>
     </section>
     <section id="doc-panel-equipo" class="doc-panel" role="tabpanel" aria-labelledby="doc-tab-equipo" hidden>
-      <h2>El trabajo detrás de AgroCebada</h2><p>El proyecto conecta análisis geoespacial, desarrollo de modelos y una interfaz que permite explorar sus resultados.</p>
+      <h2>El trabajo detrás de Fruticebada</h2><p>El proyecto conecta análisis geoespacial, desarrollo de modelos y una interfaz que permite explorar sus resultados.</p>
       <div class="doc-cards"><article><span class="eyebrow">DATOS Y TERRITORIO</span><h3>Calidad e ingeniería</h3><p>Revisión de sensores, cobertura mensual, extracción de clima y topografía, y construcción de variables.</p></article><article><span class="eyebrow">MODELOS</span><h3>Evaluación e interpretación</h3><p>Validación espacial, comparación de modelos, análisis de importancia y generación de predicciones.</p></article><article><span class="eyebrow">APLICACIÓN</span><h3>Integración y comunicación</h3><p>Importación de artefactos, mapa, tablas y documentación para consultar cada resultado con su contexto.</p></article></div>
       <p class="doc-source">Estos apartados describen áreas de trabajo, sin asignarlas a personas. Los nombres y créditos individuales se incorporarán cuando el equipo los comparta.</p>
     </section>
@@ -171,7 +178,7 @@
     </section>
   </section>
 </main>
-<button id="chat-reopen" type="button" aria-controls="chat-panel" aria-expanded="false" hidden>✦ Chat con IA</button>
+<button id="chat-reopen" type="button" aria-controls="chat-panel" aria-expanded="false" hidden>✦ Asistente Fruticebada</button>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="labels.js"></script>

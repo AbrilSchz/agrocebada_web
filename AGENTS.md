@@ -1,4 +1,4 @@
-# AGENTS.md — AgroCebada
+# AGENTS.md — Fruticebada
 
 ## Objetivo y comunicación
 Esta web permite explorar parcelas y sus mediciones agrícolas. Explica en español
