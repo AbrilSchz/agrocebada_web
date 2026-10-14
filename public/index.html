@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="workspace.css">
+<link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <header class="nav">
@@ -17,6 +18,7 @@
     <a href="#documentacion" data-v="documentacion">Documentación</a>
   </nav>
   <div class="global-search"><label for="buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span class="sr-only">Buscar parcela por ID</span></label><input id="buscar" type="search" placeholder="Busca una parcela · AGC_003" list="ids" autocomplete="off"></div>
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Activar modo oscuro" aria-pressed="false"><span data-theme-icon aria-hidden="true">☾</span><span data-theme-label>Modo oscuro</span></button>
   <datalist id="ids"></datalist>
 </header>
 <main>
@@ -179,6 +181,7 @@
   </section>
 </main>
 <button id="chat-reopen" type="button" aria-controls="chat-panel" aria-expanded="false" hidden>✦ Asistente Fruticebada</button>
+<script src="theme.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="labels.js"></script>
@@ -193,5 +196,4 @@
 <script src="app.js"></script>
 </body>
 </html>
-
 

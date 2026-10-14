@@ -9,19 +9,25 @@ const scripts=[...html.matchAll(/<script src="([^"/]+\.js)"><\/script>/g)].map(m
 const source=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 function node() {
   let markup='';
+  const nested=new Map(),listeners={};
   return {hidden:false,value:'',checked:true,style:{},dataset:{},children:[],textContent:'',
-    classList:{toggle(){},add(){},remove(){}},setAttribute(){},addEventListener(){},
+    classList:{toggle(){},add(){},remove(){}},setAttribute(name,value){this[name]=value;},addEventListener(type,listener){listeners[type]=listener;},
     append(...children){this.children.push(...children);},replaceChildren(){this.children=[];},
     contains(){return false;},focus(){},querySelectorAll(){return [];},
+    querySelector(selector){if(!nested.has(selector))nested.set(selector,node());return nested.get(selector);},
+    listeners,
     get innerHTML(){return markup;},set innerHTML(v){markup=v;},
     insertAdjacentHTML(_where,v){markup+=v;},
     get options(){return [...markup.matchAll(/<option value="([^"]*)"/g)].map(m=>({value:m[1]}));},
     get selectedOptions(){return [{textContent:'Elevación'}];}
   };
 }
-async function boot({failParcels=false,appSource=source}={}) {
+async function boot({failParcels=false,appSource=source,initialTheme=null}={}) {
   const nodes=new Map([...html.matchAll(/\bid="([^"]+)"/g)].map(m=>['#'+m[1],node()]));
+  const stored=new Map();
+  if(initialTheme)stored.set('fruticebada-theme',initialTheme);
   nodes.get('#opacidad').value='0.75';nodes.get('#map-status').textContent='Cargando parcelas…';
+  const documentElement={dataset:{}};
   const requests=[],drawn=[];
   const bounds={isValid:()=>true};
   const map={setView(){return this;},on(){},getSize:()=>({x:900,y:700}),
@@ -31,7 +37,8 @@ async function boot({failParcels=false,appSource=source}={}) {
     DomEvent:{disableClickPropagation:checkElement,disableScrollPropagation:checkElement},
     geoJSON(fc,options){drawn.push(fc.features);fc.features.forEach(f=>options.onEachFeature(f,{on(){return this;}}));return {addTo(){return this;},setStyle(){},getBounds:()=>bounds};}};
   const scope={console,AbortController,setTimeout,clearTimeout,L,navigator:{},ResizeObserver:class {observe(){}},
-    document:{querySelector:s=>nodes.get(s)||null,querySelectorAll:()=>[],createElement:node,body:node(),addEventListener(){}},
+    document:{documentElement,querySelector:s=>nodes.get(s)||null,querySelectorAll:()=>[],createElement:node,body:node(),addEventListener(){}},
+    localStorage:{getItem:key=>stored.get(key)||null,setItem:(key,value)=>stored.set(key,value)},
     addEventListener(){},matchMedia:()=>({matches:false}),
     fetch:async url=>{
       requests.push(url);
@@ -46,7 +53,7 @@ async function boot({failParcels=false,appSource=source}={}) {
   scope.window=scope;vm.createContext(scope);
   for(const file of scripts) vm.runInContext(file==='app.js' ? appSource : readFileSync(new URL('../public/'+file,import.meta.url),'utf8'),scope,{filename:file});
   for(let i=0;i<3;i++) await new Promise(resolve=>setImmediate(resolve));
-  return {nodes,requests,drawn};
+  return {nodes,requests,drawn,documentElement,stored};
 }
 
 // Reproduce la regresión original: una excepción anterior a init deja el indicador.
@@ -58,6 +65,14 @@ assert(success.drawn.at(-1).some(f=>f.id==='AGC_003'));
 assert(success.nodes.get('#t').innerHTML.includes('AGC_003'),'La tabla también recibió la parcela');
 assert(success.nodes.get('#leyenda').innerHTML.includes('2400.00'),'La capa inicial se pintó');
 assert.equal(success.nodes.get('#chat-panel').hidden,false,'El chat sigue abierto');
+const themeToggle=success.nodes.get('#theme-toggle');
+assert.equal(themeToggle['aria-pressed'],'false','El modo claro es la opción inicial');
+themeToggle.listeners.click();
+assert.equal(success.documentElement.dataset.theme,'dark','El control activa el modo oscuro');
+assert.equal(themeToggle['aria-pressed'],'true','El botón expone el estado activo');
+assert.equal(success.stored.get('fruticebada-theme'),'dark','La preferencia se guarda');
+const savedTheme=await boot({initialTheme:'dark'});
+assert.equal(savedTheme.documentElement.dataset.theme,'dark','La preferencia guardada se aplica al iniciar');
 const failure=await boot({failParcels:true});
 assert(!failure.nodes.get('#map-status').hidden);
 assert(failure.nodes.get('#map-status').textContent.includes('No se pudieron cargar las parcelas'));
