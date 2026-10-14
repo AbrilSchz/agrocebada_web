@@ -155,8 +155,6 @@ $('#table-export').onclick=()=>{
 L.DomEvent.disableClickPropagation($('#map-tools'));
 L.DomEvent.disableClickPropagation($('#map-navigation'));
 L.DomEvent.disableClickPropagation($('#map-legend'));
-L.DomEvent.disableClickPropagation($('#map-assistant'));
-L.DomEvent.disableScrollPropagation($('#chat-panel'));
 function setupRegions(data) {
   if(regionController || !allParcels) return;
   allParcels=window.REGIONS.enrichParcels(allParcels,data,C.estados);
