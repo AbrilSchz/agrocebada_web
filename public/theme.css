@@ -217,6 +217,8 @@
 :root[data-theme="dark"] .chart-tabs button[aria-selected="false"] { color: #b5c3b9; }
 :root[data-theme="dark"] .doc-tabs button[aria-selected="false"] { background: var(--surface-raised); color: var(--muted); border-color: var(--surface-border); }
 :root[data-theme="dark"] .doc-tabs button[aria-selected="true"] { color: #fff; }
+:root[data-theme="dark"] #documentacion a { color: #8bd9a7; }
+:root[data-theme="dark"] #documentacion a:hover { color: #a8ebbd; }
 :root[data-theme="dark"] .notebook-heading { background: var(--surface-raised); }
 :root[data-theme="dark"] .notebook-cell pre,
 :root[data-theme="dark"] .notebook-output pre { background: #131a16; color: #c8d7cd; border-color: var(--surface-border); }
