@@ -1,20 +1,115 @@
 {
   "notebooks": [
-    {"id":"calidad","archivo":"01_Calidad_y_Contexto_Agronomico.ipynb","titulo":"01 · Calidad y contexto agronómico","descripcion":"Estructura del dataset, distribución espacial y cobertura de los sensores."},
-    {"id":"ingenieria","archivo":"02_Ingenieria_Fenologica_y_Espacial.ipynb","titulo":"02 · Ingeniería fenológica y espacial","descripcion":"Extracción de clima y topografía, bloques temáticos y matriz de variables."},
-    {"id":"validacion","archivo":"03_Validacion_Robusta_y_Ablacion.ipynb","titulo":"03 · Validación robusta y ablación","descripcion":"Comparación de cinco modelos, tres esquemas de validación y aporte de los bloques."},
-    {"id":"interpretabilidad","archivo":"04_Interpretabilidad_y_Preguntas_Guia.ipynb","titulo":"04 · Interpretabilidad y preguntas guía","descripcion":"Importancias, ensamble final, intervalos y artefactos por parcela para el dashboard."}
+    {
+      "id": "calidad",
+      "archivo": "01_Calidad_y_Contexto_Agronomico.ipynb",
+      "titulo": "01 · Calidad y contexto agronómico",
+      "descripcion": "Estructura del dataset, distribución espacial y cobertura de los sensores."
+    },
+    {
+      "id": "ingenieria",
+      "archivo": "02_Ingenieria_Fenologica_y_Espacial.ipynb",
+      "titulo": "02 · Ingeniería fenológica y espacial",
+      "descripcion": "Extracción de clima y topografía, bloques temáticos y matriz de variables."
+    },
+    {
+      "id": "validacion",
+      "archivo": "03_Validacion_Robusta_y_Ablacion.ipynb",
+      "titulo": "03 · Validación robusta y ablación",
+      "descripcion": "Comparación de cinco modelos, tres esquemas de validación y aporte de los bloques."
+    },
+    {
+      "id": "interpretabilidad",
+      "archivo": "04_Interpretabilidad_y_Preguntas_Guia.ipynb",
+      "titulo": "04 · Interpretabilidad y preguntas guía",
+      "descripcion": "Importancias, ensamble final, intervalos y artefactos por parcela para el dashboard."
+    }
   ],
   "fuentes": [
-    {"id":"importador-final","archivo":"scripts/importar_libretas.py","titulo":"Importador de los artefactos finales · Python"},
-    {"id":"importador-modelo","archivo":"scripts/importar_modelo.py","titulo":"Importador del contrato de resultados · Python"},
-    {"id":"api","archivo":"server.js","titulo":"API de parcelas, resultados y explicación · JavaScript"},
-    {"id":"dashboard","archivo":"public/app.js","titulo":"Mapa, dashboard y filtros compartidos · JavaScript"},
-    {"id":"tabla","archivo":"public/parcels.js","titulo":"Tabla, filtros, ordenación y exportación · JavaScript"},
-    {"id":"regiones","archivo":"public/regions.js","titulo":"Municipios, máscara geográfica y zoom · JavaScript"},
-    {"id":"graficas","archivo":"public/charts.js","titulo":"Gráficas vectoriales de resultados e importancia · JavaScript"},
-    {"id":"etiquetas","archivo":"public/labels.js","titulo":"Nombres de variables y unidades · JavaScript"},
-    {"id":"documentacion","archivo":"public/documentation.js","titulo":"Visor de libretas · JavaScript"},
-    {"id":"lector-notebooks","archivo":"lib/documentation.js","titulo":"Lectura de notebooks y descargas · JavaScript"}
+    {
+      "id": "importador-final",
+      "archivo": "scripts/importar_libretas.py",
+      "titulo": "Importador de los artefactos finales · Python"
+    },
+    {
+      "id": "importador-modelo",
+      "archivo": "scripts/importar_modelo.py",
+      "titulo": "Importador del contrato de resultados · Python"
+    },
+    {
+      "id": "api",
+      "archivo": "server.js",
+      "titulo": "API de parcelas, resultados y explicación · JavaScript"
+    },
+    {
+      "id": "dashboard",
+      "archivo": "public/app.js",
+      "titulo": "Mapa, dashboard y filtros compartidos · JavaScript"
+    },
+    {
+      "id": "tabla",
+      "archivo": "public/parcels.js",
+      "titulo": "Tabla, filtros, ordenación y exportación · JavaScript"
+    },
+    {
+      "id": "regiones",
+      "archivo": "public/regions.js",
+      "titulo": "Municipios, máscara geográfica y zoom · JavaScript"
+    },
+    {
+      "id": "graficas",
+      "archivo": "public/charts.js",
+      "titulo": "Gráficas vectoriales de resultados e importancia · JavaScript"
+    },
+    {
+      "id": "chat-interfaz",
+      "archivo": "public/chat.js",
+      "titulo": "Chat, historial y selección de contexto · JavaScript"
+    },
+    {
+      "id": "chat-servidor",
+      "archivo": "lib/chat.js",
+      "titulo": "Validación y mensajes del chat para el LLM · JavaScript"
+    },
+    {
+      "id": "agente-contrato",
+      "archivo": "public/agent-actions.js",
+      "titulo": "Contrato compartido de acciones del agente · JavaScript"
+    },
+    {
+      "id": "agente-interfaz",
+      "archivo": "public/dashboard-agent.js",
+      "titulo": "Acciones permitidas sobre mapa, tabla y filtros · JavaScript"
+    },
+    {
+      "id": "agente-servidor",
+      "archivo": "lib/agent.js",
+      "titulo": "Agente, consultas de parcelas e interpretación breve · JavaScript"
+    },
+    {
+      "id": "voz",
+      "archivo": "public/voice.js",
+      "titulo": "Comandos por voz y ciclo del micrófono · JavaScript"
+    },
+    {
+      "id": "gemini",
+      "archivo": "lib/llm.js",
+      "titulo": "Transporte de Gemini y validación del audio · JavaScript"
+    },
+    {
+      "id": "etiquetas",
+      "archivo": "public/labels.js",
+      "titulo": "Nombres de variables y unidades · JavaScript"
+    },
+    {
+      "id": "documentacion",
+      "archivo": "public/documentation.js",
+      "titulo": "Visor de libretas · JavaScript"
+    },
+    {
+      "id": "lector-notebooks",
+      "archivo": "lib/documentation.js",
+      "titulo": "Lectura de notebooks y descargas · JavaScript"
+    }
   ]
 }

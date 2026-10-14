@@ -1,0 +1,86 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {validateChat,chatContents,mockChat} from '../lib/chat.js';
+import {generateGemini,validateAudio} from '../lib/llm.js';
+
+const fail=message=>new Error(message);
+assert.throws(()=>validateChat({message:'x',history:Array.from({length:14},(_,i)=>({role:i%2 ? 'assistant':'user',content:'x'}))},fail));
+assert.throws(()=>validateChat({message:'x',history:[{role:'user',content:'x'.repeat(2001)},{role:'assistant',content:'x'}]},fail));
+assert.throws(()=>validateChat({message:'x',history:Array.from({length:8},(_,i)=>({role:i%2 ? 'assistant':'user',content:'x'.repeat(2000)}))},fail));
+const conversation=validateChat({message:' ¿Cuál es su error? ',history:[{role:'user',content:'Hola'},{role:'assistant',content:'Hola'}]},fail);
+const context={ID_POLIGONO:'AGC_003',unidad_rendimiento:'t/ha',dataset:{id:'final',label:'Datos finales',demonstration:false},resultado:{prediccion:3.5,observado:null},metricas:{},contexto_modelo:{variables_modelo:{grande:100},municipio:'Singuilucan'},contribuciones:[]};
+const contents=chatContents(context,conversation);
+assert.deepEqual(contents.map(c=>c.role),['user','model','user','model','user']);
+assert.equal(contents.at(-1).parts[0].text,'¿Cuál es su error?');
+assert(contents[0].parts[0].text.includes('3.5'));
+assert(!contents[0].parts[0].text.includes('variables_modelo'));
+assert(mockChat(context,conversation).includes('no se calcula error'));
+assert(mockChat({...context,resultado:{prediccion:0,observado:null}},conversation).includes('0.000'));
+assert(mockChat({...context,resultado:{prediccion:null,observado:null}},conversation).includes('predicción sin dato'));
+
+// Transporte real con proveedor simulado, sin consumir Gemini.
+let sent;
+const env={GEMINI_API_KEY:'test-only-key',GEMINI_MODEL:'configured-model'};
+const answer=await generateGemini({contents},{env,transport:async(url,options)=>{
+  sent={url,options};return {ok:true,status:200,json:async()=>({candidates:[{content:{role:'model',parts:[{thought:true,text:'interno'},{text:'Respuesta del proveedor'}]}}]})};
+}});
+assert.equal(answer.text,'Respuesta del proveedor');assert(sent.url.endsWith('/configured-model:generateContent'));
+assert.deepEqual(JSON.parse(sent.options.body).contents.map(c=>c.role),['user','model','user','model','user']);
+assert(!sent.options.body.includes('test-only-key'));assert.equal(sent.options.headers['x-goog-api-key'],'test-only-key');
+await assert.rejects(generateGemini({},{env,transport:async()=>({ok:false,status:429})}),e=>e.status===429);
+await assert.rejects(generateGemini({},{env:{}}),e=>e.status===503);
+await assert.rejects(generateGemini({},{env,transport:async()=>{throw Object.assign(new Error('cancelado'),{name:'AbortError'});}}),e=>e.status===504);
+for(const body of [{mimeType:'text/html',audio:'a'}, {mimeType:'audio/webm',audio:'bad'}, {mimeType:'audio/webm',audio:'YQ=='}, {mimeType:'audio/ogg',audio:'A'.repeat(1400004)}]) assert.throws(()=>validateAudio(body));
+assert.equal(validateAudio({mimeType:'audio/mp4',audio:Buffer.alloc(100).toString('base64')}).mimeType,'audio/m4a');
+
+function node() {return {hidden:false,value:'',disabled:false,children:[],attributes:{},style:{},getBoundingClientRect(){return {top:650};},setAttribute(k,v){this.attributes[k]=v;},append(...children){this.children.push(...children);},replaceChildren(){this.children=[];},focus(){this.focused=true;}};}
+const ids=['chat-panel','chat-context','chat-messages','chat-toggle','chat-input','chat-send','chat-form','chat-status','chat-error','chat-mode','chat-close','chat-reset','chat-mic','chat-reopen','container'];
+const nodes=new Map(ids.map(id=>['#'+id,node()]));nodes.get('#chat-panel').hidden=true;
+const requests=[],listeners=[],pending=[];
+const voiceCalls=[];
+const scope={window:{innerWidth:1280,innerHeight:900,addEventListener(){},createChatVoice:callbacks=>{scope.voiceCallbacks=callbacks;return {cancel(){voiceCalls.push('cancel');},start(){voiceCalls.push('start');}};}},AbortController,document:{querySelector:key=>nodes.get(key),querySelectorAll:()=>[],createElement:()=>node(),body:node(),addEventListener:(name,fn)=>listeners.push({name,fn})},fetch:(url,options)=>{requests.push({url,payload:JSON.parse(options.body),signal:options.signal});return new Promise(resolve=>pending.push(resolve));}};
+vm.createContext(scope);vm.runInContext(readFileSync(new URL('../public/chat.js',import.meta.url),'utf8'),scope);
+nodes.get('#chat-toggle').onclick();assert.equal(nodes.get('#chat-panel').hidden,false);
+assert.equal(requests.length,0,'Abrir el chat no llama al proveedor');
+nodes.get('#chat-input').value='<script>hola</script>';
+const first=nodes.get('#chat-form').onsubmit({preventDefault(){}});
+assert(nodes.get('#chat-send').disabled);
+pending.shift()({ok:true,json:async()=>({reply:'<img src=x onerror=alert(1)>',mode:'mock'})});await first;
+const log=nodes.get('#chat-messages');
+assert.equal(log.children[1].children[1].textContent,'<img src=x onerror=alert(1)>','La respuesta se inserta como texto');
+assert(nodes.get('#chat-mode').textContent.includes('sin llamada'));
+nodes.get('#chat-input').value='Explica eso';
+const old=nodes.get('#chat-form').onsubmit({preventDefault(){}});
+assert.equal(requests.at(-1).payload.history.length,2);
+scope.window.CHAT.setContext({parcelId:'AGC_003'});
+assert(requests.at(-1).signal.aborted);
+pending.shift()({ok:true,json:async()=>({reply:'respuesta anterior',mode:'live'})});await old;
+assert.equal(log.children.length,1);
+assert(!JSON.stringify(log.children).includes('respuesta anterior'));
+nodes.get('#chat-input').value='Mi parcela';
+const current=nodes.get('#chat-form').onsubmit({preventDefault(){}});
+assert.equal(requests.at(-1).payload.ID_POLIGONO,'AGC_003');
+assert.equal(requests.at(-1).payload.history.length,0);
+pending.shift()({ok:false,status:503,json:async()=>({error:'Falta GEMINI_API_KEY'})});await current;
+assert.equal(nodes.get('#chat-input').value,'Mi parcela');
+assert(!nodes.get('#chat-error').textContent.includes('GEMINI_API_KEY'));
+assert.equal(log.children.length,1,'Un error no rompe la alternancia del historial');
+listeners.find(l=>l.name==='keydown').fn({key:'Escape',preventDefault(){},stopImmediatePropagation(){}});
+assert(nodes.get('#chat-panel').hidden && nodes.get('#chat-toggle').focused);
+// La selección que aplica el agente conserva su propio turno, sin invalidarse.
+scope.window.DASHBOARD_AGENT={snapshot:()=>({vista:'mapa',capa:'elevacion',metrica:null,filtros:{}}),apply:actions=>{scope.window.CHAT.setContext({parcelId:actions[0].args.id});return ['Parcela '+actions[0].args.id];}};
+nodes.get('#chat-toggle').onclick();nodes.get('#chat-input').value='Selecciona AGC_001';
+const action=nodes.get('#chat-form').onsubmit({preventDefault(){}});
+pending.shift()({ok:true,json:async()=>({reply:'Selección preparada',mode:'live',actions:[{type:'seleccionar_parcela',args:{id:'AGC_001'}}]})});await action;
+assert.equal(log.children.length,2);assert(log.children[1].children[2].textContent.includes('AGC_001'));
+assert(nodes.get('#chat-context').textContent.includes('AGC_001'));
+scope.window.CHAT.openExplanation('Una lectura breve sin repetir tarjetas.','mock');
+assert.equal(log.children.length,2);assert.equal(log.children[1].children[1].textContent,'Una lectura breve sin repetir tarjetas.');
+nodes.get('#chat-input').value='¿Y esa limitación?';
+const briefFollowup=nodes.get('#chat-form').onsubmit({preventDefault(){}});
+assert.equal(requests.at(-1).payload.history[1].content,'Una lectura breve sin repetir tarjetas.');
+pending.shift()({ok:true,json:async()=>({reply:'Continuación',mode:'mock',actions:[]})});await briefFollowup;
+nodes.get('#chat-mic').onclick();assert.equal(voiceCalls.at(-1),'start');
+scope.window.CHAT.close();assert.equal(voiceCalls.at(-1),'cancel');
+console.log('Chat OK: historial/contexto, transporte Gemini simulado, errores, texto seguro, turno con acciones, interpretación y liberación de voz.');

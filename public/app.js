@@ -43,9 +43,10 @@ const estilo = feature => {
   const v = valores[feature.id], selected = String(feature.id) === selectedParcelId;
   return { color: selected ? '#ffb000' : '#fff', weight: selected ? 3 : ($('#contornos').checked ? 1.5 : 0),
     fillColor: v == null ? '#888' : color((v - rango[0]) / (rango[1] - rango[0] || 1)),
-    fillOpacity: Number($('#opacidad').value) * (v == null ? 0.4 : 1) };
+    fillOpacity: Number($('#opacidad').value) * (v == null ? 0.4 : 1),className:'parcel-shape' };
 };
 function refreshStyle() { if (geo) geo.setStyle(estilo); renderParcelTable(); }
+function syncChatContext() {window.CHAT?.setContext({parcelId:selectedParcelId,campaign:resultMap.enabled ? resultMap.dataset : currentDashboard?.campaña,model:resultMap.enabled ? resultMap.model : currentDashboard?.version_modelo});}
 function visibleFeatures() {return window.PARCELS.filter(allParcels?.features || [],{...parcelFilters,predictionOnly,values:valores});}
 function updateMapSummary() {
   const visible=visibleFeatures(),name=resultMap.enabled ? $('#results-metric').selectedOptions[0]?.textContent : capas.find(c=>c.id===$('#capa').value)?.nombre;
@@ -154,6 +155,8 @@ $('#table-export').onclick=()=>{
 L.DomEvent.disableClickPropagation($('#map-tools'));
 L.DomEvent.disableClickPropagation($('#map-navigation'));
 L.DomEvent.disableClickPropagation($('#map-legend'));
+L.DomEvent.disableClickPropagation($('#map-assistant'));
+L.DomEvent.disableScrollPropagation($('#chat-panel'));
 function setupRegions(data) {
   if(regionController || !allParcels) return;
   allParcels=window.REGIONS.enrichParcels(allParcels,data,C.estados);
@@ -197,7 +200,8 @@ function toggleLayers(open) {
   $('#layers-panel').hidden = !open;
   $('#layers-button').setAttribute('aria-expanded', String(open));
 }
-$('#layers-button').onclick = () => toggleLayers($('#layers-panel').hidden);
+window.CHAT?.onOpen(()=>toggleLayers(false));
+$('#layers-button').onclick=()=>{const open=$('#layers-panel').hidden;if(open) window.CHAT?.close();toggleLayers(open);};
 L.DomEvent.disableClickPropagation($('#layers-panel'));
 L.DomEvent.disableScrollPropagation($('#layers-panel'));
 L.DomEvent.disableClickPropagation($('#layers-button'));
@@ -210,7 +214,7 @@ document.addEventListener('keydown', e => {
   else clearSelection();
 });
 $('#opacidad').oninput = $('#contornos').onchange = refreshStyle;
-async function pintar() {
+async function pintar(fechaDeseada) {
   if (resultMap.enabled) return;
   const sequence = ++layerSequence, capa = $('#capa').value, fSel = $('#fecha');
   $('#layers-error').hidden = true;
@@ -224,6 +228,10 @@ async function pintar() {
       if (sequence !== layerSequence || resultMap.enabled) return;
       fSel.innerHTML = fechas.map(f => `<option value="${esc(f)}">${esc(P.date(f))}</option>`).join('');
       fSel.value = fechas.at(-1) ?? ''; fSel.dataset.capa = capa;
+    }
+    if(fechaDeseada!==undefined) {
+      if(![...fSel.options].some(o=>o.value===fechaDeseada)) throw new Error('La fecha solicitada no está disponible');
+      fSel.value=fechaDeseada;
     }
     fSel.hidden = !fSel.value || fSel.options.length<2;
     const data = await json(`/api/capas/${encodeURIComponent(capa)}/valores?fecha=${encodeURIComponent(fSel.value)}`);
@@ -249,6 +257,7 @@ function vista(view) {
   document.querySelectorAll('.nav a[data-v]').forEach(a => a.classList.toggle('active', a.dataset.v === view));
   if (view === 'mapa') requestAnimationFrame(() => { map.invalidateSize(); ajustarLimites(); });
   if (view === 'documentacion') window.DOCUMENTATION.open();
+  window.CHAT?.viewChanged(view);
 }
 document.querySelectorAll('.nav a[data-v]').forEach(a => a.onclick = e => { e.preventDefault(); vista(a.dataset.v); });
 function irA(id) {
@@ -309,6 +318,7 @@ function dashboardState(state, message = '') {
 }
 async function selectParcel(id) {
   selectedParcelId = String(id); currentDashboard = null;
+  syncChatContext();
   const sequence = ++dashboardSequence;
   ++infoSequence; dashboardController?.abort(); infoController?.abort();
   dashboardController = new AbortController();
@@ -319,7 +329,7 @@ async function selectParcel(id) {
     const selectors = resultMap.enabled ? `?${new URLSearchParams({'campaña':resultMap.dataset,version_modelo:resultMap.model})}` : '';
     const data = await json(`/api/parcelas/${encodeURIComponent(id)}/dashboard${selectors}`, { signal: dashboardController.signal });
     if (sequence !== dashboardSequence || selectedParcelId !== String(id)) return;
-    currentDashboard = data; updateDashboard(data);$('#table-detail').innerHTML=window.PARCELS.detail(data);renderParcelTable();
+    currentDashboard=data;syncChatContext();updateDashboard(data);$('#table-detail').innerHTML=window.PARCELS.detail(data);renderParcelTable();
   } catch (error) {
     if (sequence !== dashboardSequence || error.name === 'AbortError') return;
     dashboardState('error', `Parcela ${id}: ${error.message}`);
@@ -330,6 +340,7 @@ function clearSelection() {
   $('#table-detail').hidden=true;$('#table-detail').replaceChildren();
   ++dashboardSequence; ++infoSequence; dashboardController?.abort(); infoController?.abort();
   selectedParcelId = null; currentDashboard = null; $('#dashboard-data').replaceChildren(); clearExplanation();
+  syncChatContext();
   dashboardState('instructions'); refreshStyle();
 }
 function clearExplanation() {
@@ -421,8 +432,8 @@ async function requestExplanation(context) {
       body: JSON.stringify({ campaña: context.campaña, version_modelo: context.version_modelo }), signal: infoController.signal
     });
     if (!isCurrent()) return;
-    $('#info-response').textContent = data.explanation; $('#info-response').hidden = false;
-    $('#ai-caption').textContent = data.mode === 'mock' ? 'Explicación local: sin llamada a IA.' : `Análisis de la parcela ${context.ID_POLIGONO}`;
+    window.CHAT?.openExplanation(data.explanation,data.mode);
+    $('#ai-caption').textContent='Interpretación breve en el chat. Continúa allí la conversación.';
   } catch (error) {
     if (!isCurrent() || error.name === 'AbortError') return;
     $('#info-error').textContent = error.message; $('#info-error').hidden = false;
@@ -467,6 +478,7 @@ function updateResultMetrics() {
 function disableResultMap(restore=true) {
   const wasEnabled=resultMap.enabled;
   resultMap.enabled=false;++resultMap.sequence;++resultMap.catalogueSequence;resultMap.controller?.abort();
+  syncChatContext();
   $('#results-panel').hidden=true;
   if(wasEnabled) clearValueRange();
   const restored=restore ? pintar() : null;
@@ -476,6 +488,7 @@ function disableResultMap(restore=true) {
 }
 async function paintResultMap() {
   if(!resultMap.enabled || !resultMap.dataset || !resultMap.model) return;
+  syncChatContext();
   const sequence=++resultMap.sequence;
   resultMap.controller?.abort();resultMap.controller=new AbortController();
   valores={};valueState.loading=true;valueState.error='';refreshStyle();$('#results-error').hidden=true;updateLegend();
@@ -502,6 +515,25 @@ $('#results-set').onchange=e=>{
   resultMap.model=set.model;resultMap.dataset=set.campaña;updateResultMetrics();return paintResultMap();
 };
 $('#results-metric').onchange=e=>{clearValueRange();resultMap.metric=e.target.value;return paintResultMap();};
+window.DASHBOARD_AGENT=window.createDashboardAgent({
+  parcels:()=>allParcels?.features || [],layers:()=>capas,
+  snapshot:()=>({vista:$('#container').hidden ? $('#tabla').hidden ? 'documentacion' : 'tabla' : 'mapa',capa:$('#capa').value,metrica:resultMap.enabled ? resultMap.metric : null,filtros:{conjunto:parcelFilters.cohort,estado:parcelFilters.state,municipio:parcelFilters.municipality,busqueda:parcelFilters.query,disponibilidad:parcelFilters.availability,minimo:parcelFilters.minimum==='' ? null : Number(parcelFilters.minimum),maximo:parcelFilters.maximum==='' ? null : Number(parcelFilters.maximum)}}),
+  seleccionar_parcela:({id})=>irA(id),
+  mostrar_capa:({id,fecha})=>{$('#capa').value=id;$('#fecha').dataset.capa='';clearValueRange();disableResultMap(false);pintar(fecha);},
+  mostrar_resultados:({metrica})=>{clearValueRange();resultMap.metric=metrica;if(resultMap.enabled) {updateResultMetrics();paintResultMap();}else {resultMap.model ||= 'ensamble-50-50-v1';resultMap.dataset ||= 'agrocebada-final';activateResultMap();}},
+  cambiar_vista:({vista:view})=>vista(view),
+  filtrar_parcelas:args=>{
+    const fields={conjunto:'cohort',estado:'state',municipio:'municipality',busqueda:'query',disponibilidad:'availability',minimo:'minimum',maximo:'maximum'};
+    if(args.estado!==undefined && args.municipio===undefined) parcelFilters.municipality='';
+    for(const [key,value] of Object.entries(args)) parcelFilters[fields[key]]=value==null ? '' : String(value);
+    if(args.municipio) parcelFilters.state=allParcels.features.find(f=>f.properties.municipio===args.municipio)?.properties.estado || '';
+    updatePopulation(parcelFilters.cohort);
+    if(args.municipio) regionController?.focus(args.municipio);
+  },
+  limpiar_filtros:()=>$('#table-reset').onclick(),
+  vista_general:()=>{vista('mapa');$('#region-home').onclick();},
+  limites_geograficos:({visible})=>{const control=$('#administrative-borders');control.checked=visible;control.onchange({target:control});}
+});
 init().catch(error => { $('#map-status').textContent = error.message; $('#map-status').hidden = false; });
 
 

@@ -34,7 +34,7 @@
   }
   class Controller {
     constructor(map,config,onMunicipality) {
-      this.map=map;this.config=config;this.onMunicipality=onMunicipality;this.visible=false;this.selected='';this.layers=new Map();this.frame=null;
+      this.map=map;this.config=config;this.onMunicipality=onMunicipality;this.visible=false;this.selected='';this.layers=new Map();this.labels=new Map();this.frame=null;
       for(const [name,z] of [['stateContext',300],['regionalContext',330],['municipalities',350]]) map.createPane(name).style.zIndex=z;
       map.getPane('stateContext').style.pointerEvents=map.getPane('regionalContext').style.pointerEvents='none';
       const ns='http://www.w3.org/2000/svg';
@@ -45,6 +45,7 @@
       this.blur=document.createElement('div');this.blur.className='map-context-blur';this.blur.hidden=true;this.blur.setAttribute('aria-hidden','true');map.getPane('regionalContext').append(this.blur);
       const schedule=()=>{if(this.frame!==null) return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.updateMask();});};
       map.on('move zoom resize',schedule);
+      map.on('zoom zoomend',()=>this.updateLabels());
       map.on('zoomanim',()=>{this.blur.hidden=true;});map.on('zoomend',()=>{this.blur.hidden=!this.visible;this.updateMask();});
     }
     load(data,parcels) {
@@ -55,7 +56,7 @@
       this.states=L.geoJSON({type:'FeatureCollection',features:data.features.filter(f=>f.properties.nivel==='estado' && C.estados[f.properties.entidad])},{pane:'stateContext',interactive:false,style:f=>({color:C.estados[f.properties.entidad].color,weight:2,opacity:.7,fillOpacity:.07})});
       this.municipalities=L.geoJSON({type:'FeatureCollection',features:this.features},{pane:'municipalities',style:f=>this.style(f),onEachFeature:(feature,layer)=>{
         const p=feature.properties,count=parcels.filter(f=>f.properties.municipio_cvegeo===p.cvegeo).length;
-        layer.bindTooltip(`<strong>${esc(p.nombre)}</strong><span>${esc(C.estados[p.entidad].nombre)} · ${count} parcelas</span>`,{sticky:true,direction:'top',className:'municipality-tooltip'});
+        this.labels.set(p.cvegeo,`<strong>${esc(p.nombre)}</strong><span>${esc(C.estados[p.entidad].nombre)} · ${count} parcelas</span>`);
         layer.on({mouseover:()=>layer.setStyle(this.style(feature,true)),mouseout:()=>layer.setStyle(this.style(feature)),click:()=>this.choose(layer)});
         this.layers.set(p.cvegeo,layer);
       }});
@@ -67,6 +68,7 @@
     choose(layer) {this.onMunicipality(layer.feature.properties,layer.getBounds());}
     setVisible(visible) {
       this.visible=visible;this.blur.hidden=!visible;
+      this.updateLabels();
       if(!this.municipalities) return;
       for(const layer of [this.states,this.municipalities]) {if(visible) layer.addTo(this.map);else this.map.removeLayer(layer);}
       if(visible) {
@@ -74,11 +76,19 @@
         this.layers.forEach(layer=>{
           const path=layer.getElement();if(!path || path.dataset.keyboardReady) return;
           path.dataset.keyboardReady='1';path.setAttribute('tabindex','0');path.setAttribute('role','button');path.setAttribute('aria-label',`Acercar al municipio ${layer.feature.properties.nombre}`);
-          path.addEventListener('focus',()=>{layer.setStyle(this.style(layer.feature,true));layer.openTooltip();});
+          path.addEventListener('focus',()=>{layer.setStyle(this.style(layer.feature,true));if(this.labelsAllowed()) layer.openTooltip();});
           path.addEventListener('blur',()=>{layer.setStyle(this.style(layer.feature));layer.closeTooltip();});
           path.addEventListener('keydown',e=>{if(e.key==='Enter' || e.key===' ') {e.preventDefault();this.choose(layer);}});
         });
       }
+    }
+    labelsAllowed() {return this.visible && this.map.getZoom()<(this.config.zoomEtiquetasMax ?? 14);}
+    updateLabels() {
+      const allowed=this.labelsAllowed();
+      this.layers.forEach((layer,key)=>{
+        if(allowed && !layer.getTooltip()) layer.bindTooltip(this.labels.get(key),{sticky:true,direction:'top',className:'municipality-tooltip'});
+        else if(!allowed && layer.getTooltip()) {layer.closeTooltip();layer.unbindTooltip();}
+      });
     }
     updateMask() {
       if(!this.visible || !this.features) return;

@@ -94,14 +94,14 @@ controls.get('#capa').value='final_Elevacion_INEGI_CEM4_120m_mean';
 controls.get('#capa').innerHTML='<option value="final_Elevacion_INEGI_CEM4_120m_mean">Elevación</option><option value="final_prec">Precipitación</option>';
 controls.get('#fecha').hidden=true;
 let layers=new Set(),borderRequests=0;
-const panes=new Map(),motions=[],container=node('map-container');
-const map={removeLayer(layer){layers.delete(layer);},createPane(name){const p=node(name);panes.set(name,p);return p;},getPane(name){return panes.get(name);},getContainer(){return container;},on(){},getSize(){return {x:700,y:650};},stop(){},flyToBounds(bounds,options){motions.push({method:'fly',bounds,options});},fitBounds(bounds,options){motions.push({method:'fit',bounds,options});},containerPointToLayerPoint(){return {x:0,y:0};},latLngToContainerPoint([lat,lon]){return {x:(lon+99)*300,y:(21-lat)*300};}};
+const panes=new Map(),motions=[],container=node('map-container'),mapEvents=new Map();let mapZoom=10;
+const map={removeLayer(layer){layers.delete(layer);},createPane(name){const p=node(name);panes.set(name,p);return p;},getPane(name){return panes.get(name);},getContainer(){return container;},on(names,fn){for(const name of names.split(' ')) {const list=mapEvents.get(name)||[];list.push(fn);mapEvents.set(name,list);}},getZoom(){return mapZoom;},getSize(){return {x:700,y:650};},stop(){},flyToBounds(bounds,options){motions.push({method:'fly',bounds,options});},fitBounds(bounds,options){motions.push({method:'fit',bounds,options});},containerPointToLayerPoint(){return {x:0,y:0};},latLngToContainerPoint([lat,lon]){return {x:(lon+99)*300,y:(21-lat)*300};}};
 const borderData=JSON.parse(readFileSync(new URL('../public/geografia/limites.geojson',import.meta.url),'utf8'));
 const mapScope={window:{PRESENTATION:scope.window.PRESENTATION,matchMedia:()=>({matches:mapScope.reducedMotion || false})},document:{querySelector:key=>controls.get(key),createElementNS:(_ns,tag)=>node(tag),createElement:tag=>node(tag)},
   map,L:{DomEvent:{disableClickPropagation(){},disableScrollPropagation(){},stopPropagation(){}},DomUtil:{setPosition(target,pos){target.position=pos;}},geoJSON(data,options){
     const list=data.features.map(feature=>{
       const element=node(feature.properties.cvegeo || feature.id);
-      const layer={feature,events:{},on(key,callback){if(typeof key==='string')this.events[key]=callback;else Object.assign(this.events,key);return this;},bindTooltip(text){this.tooltip=text;return this;},setStyle(style){this.style=style;return this;},getBounds(){return {isValid:()=>true,id:feature.properties.cvegeo || feature.id};},getElement(){return element;},openTooltip(){this.tooltipOpen=true;},closeTooltip(){this.tooltipOpen=false;}};
+      const layer={feature,events:{},on(key,callback){if(typeof key==='string')this.events[key]=callback;else Object.assign(this.events,key);return this;},bindTooltip(text){this.tooltip=text;return this;},getTooltip(){return this.tooltip;},unbindTooltip(){this.tooltip=null;return this;},setStyle(style){this.style=style;return this;},getBounds(){return {isValid:()=>true,id:feature.properties.cvegeo || feature.id};},getElement(){return element;},openTooltip(){this.tooltipOpen=true;},closeTooltip(){this.tooltipOpen=false;}};
       options.onEachFeature?.(feature,layer);return layer;
     });
     return {features:data.features,options,children:list,addTo(){layers.add(this);return this;},setStyle(style){list.forEach(layer=>layer.setStyle(typeof style==='function' ? style(layer.feature) : style));},eachLayer(fn){list.forEach(fn);},getBounds(){return {isValid:()=>data.features.length>0};}};
@@ -115,10 +115,12 @@ const mapScope={window:{PRESENTATION:scope.window.PRESENTATION,matchMedia:()=>({
     throw Error(url);
   },P:scope.window.PRESENTATION};
 vm.createContext(mapScope);
-for(const file of ['config.js','parcels.js','regions.js']) vm.runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8'),mapScope);
+for(const file of ['config.js','parcels.js','regions.js','agent-actions.js','dashboard-agent.js']) vm.runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8'),mapScope);
+mapScope.window.AGENT_ACTIONS=mapScope.AGENT_ACTIONS;
 mapScope.C=mapScope.window.CONFIG;
 const mapFunctions=source.slice(source.indexOf('function visibleFeatures('),source.indexOf('async function json('));
 vm.runInContext(`const $=s=>document.querySelector(s),hasNumber=P.hasNumber,esc=v=>String(v??''),number=(v,d=2)=>Number(v).toFixed(d);let allParcels=window.REGIONS.enrichParcels({type:'FeatureCollection',features:fixture.features},borderData,C.estados),geo,predictionOnly=false,regionController=null,administrativePromise=null,selectedParcelId='AGC_001';let valores={},rango=[0,1],layerSequence=0,resultCataloguePromise=null,currentDashboard=null;const parcelFilters={state:'',cohort:'',municipality:'',query:'',availability:'',minimum:'',maximum:''},tableSort={key:'id',direction:'asc'},valueState={loading:false,error:''},ramp=['red','blue'];const resultMap={enabled:false,model:null,dataset:null,metric:'prediccion',sets:[],sequence:0,catalogueSequence:0,controller:null};const capas=[{id:'final_Elevacion_INEGI_CEM4_120m_mean',nombre:'Elevación',unidad:'m'},{id:'final_prec',nombre:'Precipitación',unidad:'mm'}];let mapVisits=0;function estilo(){}function refreshStyle(){renderParcelTable();}function selectParcel(id){selectedParcelId=id;}function clearSelection(){selectedParcelId=null;}function irA(){mapVisits++;}function toggleLayers(){};${mapFunctions}`,mapScope);
+vm.runInContext(source.slice(source.indexOf('function syncChatContext('),source.indexOf('function visibleFeatures(')),mapScope);
 vm.runInContext(source.slice(source.indexOf('async function pintar('),source.indexOf("$('#info-button').onclick")),mapScope);
 vm.runInContext(source.slice(source.indexOf('async function activateResultMap('),source.indexOf('init().catch(')),mapScope);
 vm.runInContext('updatePredictionFilter(true)',mapScope);
@@ -190,6 +192,10 @@ assert(regions.layers.has('13021') && !regions.layers.has('29046'),'Emiliano Zap
 const singuilucan=regions.layers.get('13057');
 singuilucan.events.mouseover();assert.equal(singuilucan.style.fillOpacity,.26);
 assert(singuilucan.tooltip.includes('Singuilucan') && singuilucan.tooltip.includes('23 parcelas'));
+singuilucan.openTooltip();mapZoom=13.99;mapEvents.get('zoom').forEach(fn=>fn());assert(singuilucan.getTooltip());
+mapZoom=14;mapEvents.get('zoom').forEach(fn=>fn());assert.equal(singuilucan.getTooltip(),null);assert.equal(singuilucan.tooltipOpen,false);
+singuilucan.getElement().events.focus();assert.equal(singuilucan.tooltipOpen,false,'Tampoco aparece con foco de teclado sobre el umbral');
+mapZoom=13;mapEvents.get('zoom').forEach(fn=>fn());assert(singuilucan.getTooltip().includes('Singuilucan'));
 singuilucan.events.click();
 assert.equal(vm.runInContext('geo.features.length',mapScope),23);
 assert.equal(motions.at(-1).options.maxZoom,12);
@@ -213,3 +219,21 @@ assert.equal(vm.runInContext('allParcels.features.filter(f=>f.properties.estado=
 assert.equal(vm.runInContext('allParcels.features.filter(f=>f.properties.estado==="Tlaxcala").length',mapScope),46);
 console.log('Mapa OK: nueve municipios por CVEGEO, estados, máscara, hover/teclado, caché, zoom municipio → parcela y movimiento reducido.');
 console.log('Tabla OK: filtros por estado, conjunto, dato, rango, municipio/capa/periodo y métrica sincronizados; ficha sin navegar y leyenda persistente.');
+const styles=readFileSync(new URL('../public/style.css',import.meta.url),'utf8');
+assert(/\.leaflet-pane svg path\s*\{[^}]*vector-effect:non-scaling-stroke/.test(styles));
+assert(source.includes("className:'parcel-shape'"));
+console.log('Zoom OK: contornos SVG sin escalado de grosor y etiquetas cerradas/desvinculadas desde zoom 14, restauradas al alejar.');
+const agent=mapScope.window.DASHBOARD_AGENT;
+agent.apply([{type:'limpiar_filtros',args:{}},{type:'filtrar_parcelas',args:{conjunto:'prediccion'}}]);
+assert.equal(vm.runInContext('geo.features.length',mapScope),59);
+assert.equal(controls.get('#map-cohort').value,'prediccion');assert.equal(controls.get('#table-population').value,'prediccion');
+assert.throws(()=>agent.apply([{type:'mostrar_resultados',args:{metrica:'error_absoluto_t_ha'}}]));
+agent.apply([{type:'limpiar_filtros',args:{}},{type:'filtrar_parcelas',args:{municipio:'Singuilucan',estado:'Hidalgo'}}]);
+assert.equal(vm.runInContext('geo.features.length',mapScope),23);
+assert.equal(controls.get('#table-municipality').value,'Singuilucan');
+agent.apply([{type:'limites_geograficos',args:{visible:false}}]);
+assert(!layers.has(regions.municipalities));
+agent.apply([{type:'limpiar_filtros',args:{}},{type:'mostrar_capa',args:{id:'final_prec',fecha:'2025-04'}}]);
+await new Promise(resolve=>setImmediate(resolve));
+assert.equal(controls.get('#fecha').value,'2025-04');assert.equal(controls.get('#table-date').value,'2025-04');
+console.log('Integración del agente OK: controles reales de capa/fecha, tabla/mapa, 59 parcelas, municipios y límites.');
