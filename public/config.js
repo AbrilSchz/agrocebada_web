@@ -8,6 +8,7 @@ window.CONFIG = {
   municipiosSeleccionados: ['13007','13008','13016','13021','13057','13061','21053','29006','29021'],
   estados: {'13':{nombre:'Hidalgo',color:'#65b6ad'},'21':{nombre:'Puebla',color:'#86a8de'},'29':{nombre:'Tlaxcala',color:'#ddb66c'}},
   zoomMunicipio: 12, zoomParcela: 17, duracionZoom: 1.1,
+  zoomEtiquetasMax: 14, // A partir de este zoom se ocultan los nombres geográficos.
   // Ejemplo al elegir el GIF: 'media/seleccion-parcela.gif'. null muestra la ilustración animada.
   gifSeleccionParcela: null,
   centro: [19.75, -98.4], zoom: 10,

@@ -63,7 +63,28 @@
         <p id="administrative-status" role="status" hidden></p>
         <p id="layers-error" class="error" hidden></p>
       </div>
-      <div id="map-legend" role="status" aria-label="Escala de colores"><strong id="legend-title">Elevación</strong><div id="leyenda"><div class="grad"></div><small>Cargando escala…</small></div></div>
+      <div id="map-assistant">
+        <section id="chat-panel" role="dialog" aria-modal="false" aria-labelledby="chat-title" hidden>
+          <div class="chat-heading"><div><span class="eyebrow">CONVERSA CON TUS DATOS</span><h2 id="chat-title">Chat AgroCebada</h2></div><button id="chat-close" type="button" aria-label="Cerrar chat">×</button></div>
+          <p id="chat-context">Conjunto completo</p>
+          <div id="chat-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+          <div class="chat-suggestions" aria-label="Acciones y preguntas rápidas">
+            <button type="button" data-chat-question="Muestra las parcelas de validación">59 de validación</button>
+            <button type="button" data-chat-question="Muestra la elevación">Elevación</button>
+            <button type="button" data-chat-question="Muestra la predicción">Predicción</button>
+            <button type="button" data-chat-question="Abre la tabla de parcelas">Ver tabla</button>
+            <button type="button" data-chat-question="Limpia los filtros">Limpiar filtros</button>
+            <button type="button" data-chat-question="¿Qué significa una predicción OOF?">¿Qué es OOF?</button>
+            <button type="button" data-chat-question="¿Qué explica SHAP y qué limitaciones tiene?">Entender SHAP</button>
+          </div>
+          <p id="chat-status" role="status" hidden></p><p id="chat-error" role="alert" hidden></p>
+          <form id="chat-form"><label class="sr-only" for="chat-input">Pregunta sobre los datos</label><textarea id="chat-input" rows="2" maxlength="1500" placeholder="Pregunta o pide una acción…" required></textarea><button id="chat-mic" type="button" aria-label="Dar un comando por voz" aria-pressed="false" title="Habla, pulsa detener y envía el comando">🎙</button><button id="chat-send" type="submit" aria-label="Enviar pregunta">↗</button></form>
+          <p class="chat-voice-note">Pulsa 🎙 para hablar. Al detener, el audio se envía a Google para transcribirlo; la frase se envía al chat.</p>
+          <div class="chat-footer"><span id="chat-mode">Consulta tus datos</span><button id="chat-reset" type="button">Nueva conversación</button></div>
+        </section>
+        <button id="chat-toggle" type="button" aria-expanded="false" aria-controls="chat-panel"><span aria-hidden="true">✦</span> Chat con IA <span aria-hidden="true">↗</span></button>
+        <div id="map-legend" role="status" aria-label="Escala de colores"><strong id="legend-title">Elevación</strong><div id="leyenda"><div class="grad"></div><small>Cargando escala…</small></div></div>
+      </div>
       <p id="map-status" role="status">Cargando parcelas…</p>
       <div id="map-summary" aria-live="polite" hidden></div>
     </section>
@@ -150,6 +171,7 @@
     </section>
   </section>
 </main>
+<button id="chat-reopen" type="button" aria-controls="chat-panel" aria-expanded="false" hidden>✦ Chat con IA</button>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="labels.js"></script>
@@ -157,6 +179,10 @@
 <script src="regions.js"></script>
 <script src="charts.js"></script>
 <script src="documentation.js"></script>
+<script src="agent-actions.js"></script>
+<script src="dashboard-agent.js"></script>
+<script src="voice.js"></script>
+<script src="chat.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -25,6 +25,96 @@ unidades y colores consistentes. La evaluación del modelo añade tarjetas MAE/R
 con la misma escala entre esquemas, conservando las métricas tabulares. La gráfica
 de una predicción final no añade una barra de observado inexistente.
 
+Los contornos geográficos usan `vector-effect: non-scaling-stroke`: su grosor se
+mantiene en píxeles de pantalla durante el vuelo del mapa. El contorno de la
+parcela seleccionada conserva 3 px; los normales, 1.5 px si están activados.
+
+## Chat y agente de la web
+
+**Chat con IA** está encima de la escala de colores. Sus botones rápidos permiten
+mostrar las 59 parcelas de validación, elevación, predicción, tabla y limpiar
+filtros; también explican OOF y SHAP. Al abrir el chat no se llama al modelo.
+Los botones envían su instrucción directamente. Enter envía y Shift+Enter añade
+un salto de línea. Escape cierra el chat. Al pasar a tabla o documentación, el chat
+sigue abierto y un botón flotante permite reabrirlo.
+
+Puedes pedir, por ejemplo, «selecciona la parcela AGC_003», «muestra la elevación»
+o «abre la tabla de parcelas». Estos atajos exactos funcionan sin Gemini, incluso
+en modo mock. Las peticiones naturales más complejas usan *function calling*:
+Gemini elige una función y sus argumentos; el servidor los valida y el navegador
+los aplica mediante los mismos controles del dashboard. No se ejecuta código
+propuesto por el modelo ni se modifica SQLite.
+
+| Acción permitida | Comportamiento |
+| --- | --- |
+| Seleccionar parcela | Busca el ID real, abre su ficha y anima el zoom; limpia filtros que la oculten. |
+| Mostrar capa | Selecciona una capa existente y, si se pide, una fecha real de sus insumos. |
+| Mostrar resultados | Predicción, observado o errores almacenados; no inventa errores para las finales. |
+| Filtrar parcelas | Conjunto, estado, municipio, búsqueda, disponibilidad y rango del valor mostrado; se comparte con la tabla. |
+| Navegar | Mapa, tabla, documentación o vista regional. |
+| Mostrar límites | Activa o desactiva la división de estados y municipios. |
+| Consultar otra parcela | El servidor lee su ficha para responder sin cambiar la selección. |
+
+El catálogo de parcelas, capas y fechas se obtiene de SQLite; los estados admitidos
+corresponden al área actual (Hidalgo, Puebla y Tlaxcala). Cada turno acepta hasta
+cuatro acciones o consultas y como máximo dos llamadas al modelo. La primera
+propone funciones; la segunda recibe datos o acciones preparadas y redacta la
+respuesta. Las acciones se despachan al navegador después de completar el turno;
+las cargas posteriores conservan sus indicadores y errores habituales. No se
+reemplaza una selección de parcelas finales por referencias automáticamente para
+mostrar errores. La interfaz indica las acciones enviadas.
+
+Sin parcela seleccionada, la conversación usa el conjunto completo, aunque haya
+filtros en pantalla. Con una parcela usa su resultado y contexto. Al cambiar la
+selección manualmente se cancela la respuesta pendiente y se reinicia el historial;
+una selección hecha por el propio agente conserva ese turno con el nuevo contexto.
+Los resultados verificados proceden del servidor, no del historial o de cifras
+aportadas por el navegador. Las respuestas se insertan como texto, sin ejecutar
+HTML. Una respuesta generada debe contrastarse con las tablas y fuentes.
+
+**AI ANALYTICS** ahora abre el mismo chat con un párrafo de interpretación breve:
+una implicación y una limitación relevantes, sin repetir los números o tarjetas.
+Puedes continuar con preguntas sobre esa lectura. En modo mock es una explicación
+local identificada como tal; los datos agrícolas siguen siendo los oficiales.
+
+### Comandos por voz
+
+Pulsa **🎙**, concede permiso al micrófono y habla; pulsa **■** para detener y enviar.
+La grabación termina automáticamente a los 20 segundos. Se admite hasta 1 MiB de
+audio WebM, OGG, MP4/M4A o WAV. El audio viaja al servidor y a Google para una
+transcripción literal; la frase reconocida aparece como mensaje tuyo y sigue el
+mismo flujo del agente. La aplicación no guarda audio en disco, SQLite o historial.
+Cerrar/reiniciar el chat o cambiar de parcela cancela la captura y libera el micrófono.
+
+La voz requiere HTTPS (o localhost), permiso del usuario, MediaRecorder compatible
+y Gemini activo en el servidor. Se detectan capacidades, sin depender de
+SpeechRecognition; esto permite usar navegadores que graban audio pero no ofrecen
+reconocimiento nativo. Si falta permiso o la IA está desactivada, aparece un mensaje
+y puedes escribir o utilizar los botones. No se activa el micrófono al abrir la web.
+
+### Configuración y contrato
+
+En Render usa **`LLM_MODE=live`**, **`GEMINI_API_KEY`** y el modelo configurado en
+`GEMINI_MODEL`, compatible con texto, audio y funciones. `LLM_MODE=mock` permite
+probar respuestas locales y acciones exactas sin llamar al proveedor. La clave
+permanece en el servidor; no llega al JavaScript público.
+
+- `POST /api/chat`: `message` (1–1500 caracteres), `history` (hasta seis pares
+  user/assistant, 2000 caracteres por mensaje y 12000 en total), `ID_POLIGONO`
+  opcional, `campaña`, `version_modelo` y `ui` opcional (vista/capa/métrica/filtros).
+  `ui` describe preferencias de pantalla; no sustituye datos reales. Responde con
+  `reply`, `mode` (`live`, `mock` o `local`), `actions` y `context`.
+- `GET /api/chat/config`: informa si la voz está habilitada, sin exponer la clave.
+- `POST /api/chat/voz`: `mimeType` y `audio` base64; devuelve `transcript`.
+- `POST /api/parcelas/:id/informacion-inteligente`: devuelve la interpretación breve.
+
+El historial reciente se envía en cada turno; no se persiste en el navegador ni
+SQLite. Chat, interpretación y voz comparten 12 solicitudes por IP/minuto.
+Cada llamada real, incluida transcripción y segundo paso del agente, cuenta para
+el límite de 60 llamadas/hora y 2 simultáneas. La caché de respuestas dura 15 minutos
+(hasta 100 entradas); el audio no se cachea. Cada llamada tiene un timeout de 15 s.
+Se respetan errores y cuotas del proveedor; no se guardan resultados nuevos.
+
 Las pestañas y tarjetas aparecen solo cuando sus datos existen. Las referencias
 OOF conservan Errores; las predicciones finales lo ocultan. Aportes se muestra
 cuando existen contribuciones completas o los tres aportes parciales del HGB.
@@ -342,7 +432,10 @@ Se usan claves, no solo nombres: también existe Emiliano Zapata en Tlaxcala
 (`29046`), que no pertenece a esta selección. `zoomMunicipio`, `zoomParcela` y
 `duracionZoom` ajustan la animación. Se detiene un vuelo anterior al elegir otra
 parcela; «movimiento reducido» del sistema sustituye el vuelo por encuadre sin
-animación. La esquina norte de `limites` pasa de 20.04 a **20.14**, porque los
+animación. `zoomEtiquetasMax` controla cuándo se ocultan los nombres geográficos:
+desde **zoom 14** se cierran y desvinculan sus tooltips durante el vuelo y no
+reaparecen al pasar el cursor o enfocar con teclado. Se restauran al alejarse por
+debajo del umbral. La esquina norte de `limites` pasa de 20.04 a **20.14**, porque los
 polígonos completos de Singuilucan y Cuautepec rebasan el límite anterior.
 
 La copia local está en `public/geografia/limites.geojson`: tres estados (Hidalgo,
