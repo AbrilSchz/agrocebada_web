@@ -94,7 +94,6 @@
           <p class="chat-voice-note">Voz: el audio se envía a Google para transcribir tu comando.</p>
           <div class="chat-footer"><span id="chat-mode">Consulta tus datos</span><button id="chat-reset" type="button">Nueva conversación</button></div>
         </section>
-        <button id="chat-toggle" type="button" aria-expanded="false" aria-controls="chat-panel"><span class="assistant-spark" aria-hidden="true">✦</span><span><strong>Tu asistente de campo</strong><small>Pregunta, filtra o navega con tu voz</small></span><span aria-hidden="true">⌄</span></button>
       </div>
       <div id="dashboard-results" tabindex="-1">
         <div class="workspace-heading"><div><span class="eyebrow">TU PARCELA, EN DETALLE</span><h2>Resultados de la parcela</h2></div><span class="workspace-dot" aria-hidden="true"></span></div>
@@ -113,7 +112,15 @@
         <div id="dashboard-instructions" class="instructions">
           <div id="selection-illustration" class="selection-illustration" aria-hidden="true"><svg viewBox="0 0 280 170"><path d="M35 30 105 15 180 35 245 18 245 135 175 152 105 132 35 150Z" fill="#edf4ef" stroke="#b8cebf" stroke-width="2"/><path d="M105 15V132M180 35 175 152" stroke="#b8cebf" stroke-width="2"/><path class="welcome-parcel" d="M120 65 162 73 158 110 116 100Z" fill="#8fc9b2" stroke="#2f826a" stroke-width="2"/><circle class="welcome-pulse" cx="139" cy="88" r="19" fill="none" stroke="#b9984b" stroke-width="2"/><path class="welcome-cursor" d="m154 90 7 30 8-11 13-4Z" fill="#244c42" stroke="#fff" stroke-width="2"/></svg></div>
           <img id="selection-gif" alt="Selecciona una parcela en el mapa" hidden>
-          <span class="eyebrow">EXPLORA EL TERRITORIO</span><h2>Selecciona una parcela</h2><p>Elige un municipio para acercarte. Después pulsa una parcela para descubrir sus resultados.</p><ol class="selection-steps"><li><span>1</span>Elige un municipio</li><li><span>2</span>Selecciona una parcela</li><li><span>3</span>Explora sus resultados</li></ol><small>O pídele al asistente que encuentre una parcela por ti.</small>
+          <span class="eyebrow">EXPLORA EL TERRITORIO</span><h2>Selecciona una parcela</h2><p>Elige un municipio para acercarte. Después pulsa una parcela para descubrir sus resultados.</p>
+          <div id="welcome-guide">
+            <div id="plant-assistant" data-position="welcome">
+              <img src="map-plant.png" alt="" aria-hidden="true">
+              <button id="plant-welcome" type="button" aria-label="Abrir el chat de Fruticebada" aria-controls="chat-panel" aria-expanded="true">¡Hola! Soy Fruti, tu asistente de campo. ¡Exploremos!</button>
+            </div>
+            <ol id="selection-steps" class="selection-steps"><li><span>1</span>Elige un municipio</li><li><span>2</span>Selecciona una parcela</li><li><span>3</span>Explora sus resultados</li></ol>
+          </div>
+          <small>O pídele al asistente que encuentre una parcela por ti.</small>
         </div>
         <div id="dashboard-data" hidden></div>
       </div>
@@ -180,7 +187,6 @@
     </section>
   </section>
 </main>
-<button id="chat-reopen" type="button" aria-controls="chat-panel" aria-expanded="false" hidden>✦ Asistente Fruticebada</button>
 <script src="theme.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
@@ -196,4 +202,3 @@
 <script src="app.js"></script>
 </body>
 </html>
-
