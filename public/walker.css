@@ -1,0 +1,117 @@
+#walker-root {
+  position: fixed;
+  z-index: 800;
+  left: 0;
+  bottom: 0;
+  width: 87px;
+  height: 116px;
+  pointer-events: none;
+  user-select: none;
+  transform-origin: left bottom;
+  will-change: transform;
+  contain: layout style;
+}
+
+#walker-root[data-mode="welcome"] {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  z-index: 1;
+  grid-column: 1;
+  grid-row: 1;
+  width: 70px;
+  height: 96px;
+  transform: none;
+  will-change: auto;
+}
+
+#walker-root[data-mode="selected"] {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  animation: walker-arrive 550ms cubic-bezier(.2,.75,.3,1) both;
+}
+
+#walker-root .walker-character {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+#walker-root[data-mode="welcome"] .walker-character,
+#walker-root[data-mode="selected"] .walker-character {
+  animation: walker-idle-breathe 2.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+#walker-root .walker-sprite {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: none;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+#walker-root .walker-shadow {
+  position: absolute;
+  z-index: 0;
+  right: 20%;
+  bottom: 1px;
+  left: 20%;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(24 39 26 / 22%);
+  filter: blur(3px);
+  transform-origin: center;
+}
+
+#walker-root[data-mode="welcome"] .walker-shadow,
+#walker-root[data-mode="selected"] .walker-shadow {
+  animation: walker-shadow-breathe 2.8s ease-in-out infinite;
+}
+
+#walker-root[data-mode="patrol"][data-paused="true"] .walker-character,
+#walker-root[data-mode="patrol"][data-paused="true"] .walker-shadow,
+#walker-root[data-reduced-motion="true"] .walker-shadow {
+  animation: none !important;
+}
+
+@keyframes walker-idle-breathe {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -2px, 0) scale(1.012); }
+}
+
+@keyframes walker-shadow-breathe {
+  0%, 100% { opacity: .72; transform: scaleX(1); }
+  50% { opacity: .45; transform: scaleX(.88); }
+}
+
+@keyframes walker-arrive {
+  from { opacity: .6; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@media (max-width: 700px) {
+  #plant-assistant[data-position="welcome"] { grid-template-columns: 58px minmax(0, 1fr); }
+  #walker-root[data-mode="welcome"] { width: 58px; height: 80px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #walker-root {
+    animation: none !important;
+  }
+  #walker-root * {
+    animation: none !important;
+  }
+}

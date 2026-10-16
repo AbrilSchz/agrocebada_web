@@ -21,6 +21,115 @@ map.on('resize', ajustarLimites);
 ajustarLimites();
 const resizeObserver = new ResizeObserver(() => { if (!$('#container').hidden) map.invalidateSize(); });
 resizeObserver.observe($('#map'));
+const workspace=$('#container'),workspaceResizer=$('#workspace-resizer');
+const dashboard=$('#dashboard'),assistantDock=$('#assistant-dock'),chatPanel=$('#chat-panel'),chatResizer=$('#chat-resizer');
+let workspaceSplit=65,workspaceDragging=false;
+let chatPanelHeight=null,chatDragging=false;
+function workspaceResizeBounds() {
+  const rect=workspace.getBoundingClientRect(),dividerWidth=workspaceResizer.getBoundingClientRect().width || 12;
+  const available=Math.max(1,rect.width-dividerWidth),minPane=Math.min(320,available/2);
+  const minRatio=Math.ceil(minPane/available*100),maxRatio=Math.floor(100-minPane/available*100);
+  return {rect,dividerWidth,available,minRatio,maxRatio};
+}
+function syncWorkspaceResizer() {
+  if(workspace.hidden || window.matchMedia('(max-width: 980px)').matches) return;
+  const {available,minRatio,maxRatio}=workspaceResizeBounds();
+  if(!available || !Number.isFinite(available)) return;
+  workspaceSplit=Math.max(minRatio,Math.min(maxRatio,workspaceSplit));
+  workspace.style.setProperty('--map-fr',String(workspaceSplit));
+  workspace.style.setProperty('--dashboard-fr',String(100-workspaceSplit));
+  workspaceResizer.setAttribute('aria-valuemin',String(minRatio));
+  workspaceResizer.setAttribute('aria-valuemax',String(maxRatio));
+  workspaceResizer.setAttribute('aria-valuenow',String(workspaceSplit));
+  workspaceResizer.setAttribute('aria-valuetext',`${workspaceSplit}% del ancho para el mapa`);
+}
+function setWorkspaceSplit(value) {
+  if(workspace.hidden || window.matchMedia('(max-width: 980px)').matches) return;
+  const {available,minRatio,maxRatio}=workspaceResizeBounds();
+  workspaceSplit=Math.round(Math.max(minRatio,Math.min(maxRatio,value)));
+  workspace.style.setProperty('--map-fr',String(workspaceSplit));
+  workspace.style.setProperty('--dashboard-fr',String(100-workspaceSplit));
+  syncWorkspaceResizer();
+  requestAnimationFrame(()=>{ if(!workspace.hidden) { map.invalidateSize({pan:false});ajustarLimites(); } });
+}
+workspaceResizer.addEventListener('pointerdown',event=>{
+  if(workspace.hidden || window.matchMedia('(max-width: 980px)').matches) return;
+  event.preventDefault();workspaceDragging=true;workspaceResizer.setPointerCapture(event.pointerId);
+});
+workspaceResizer.addEventListener('pointermove',event=>{
+  if(!workspaceDragging) return;
+  const {rect,dividerWidth,available}=workspaceResizeBounds();
+  setWorkspaceSplit((event.clientX-rect.left-dividerWidth/2)/available*100);
+});
+workspaceResizer.addEventListener('pointerup',()=>{workspaceDragging=false;});
+workspaceResizer.addEventListener('pointercancel',()=>{workspaceDragging=false;});
+workspaceResizer.addEventListener('keydown',event=>{
+  const {available,minRatio,maxRatio}=workspaceResizeBounds();
+  const step=(event.shiftKey ? 80 : 24)/available*100;
+  if(event.key==='ArrowLeft') setWorkspaceSplit(workspaceSplit-step);
+  else if(event.key==='ArrowRight') setWorkspaceSplit(workspaceSplit+step);
+  else if(event.key==='Home') setWorkspaceSplit(minRatio);
+  else if(event.key==='End') setWorkspaceSplit(maxRatio);
+  else return;
+  event.preventDefault();
+});
+syncWorkspaceResizer();
+window.addEventListener('resize',syncWorkspaceResizer);
+function chatResizeBounds() {
+  const dashboardRect=dashboard.getBoundingClientRect(),dockRect=assistantDock.getBoundingClientRect();
+  const resizerHeight=chatResizer.getBoundingClientRect().height || 12;
+  const dockOffset=Math.max(0,dockRect.top-dashboardRect.top);
+  const available=dashboardRect.height-dockOffset-resizerHeight-180;
+  const minHeight=220,maxHeight=Math.max(minHeight,Math.min(available,window.innerHeight-225));
+  return {minHeight,maxHeight};
+}
+function chatCanResize() {
+  return !workspace.hidden && !chatPanel.hidden && chatPanel.dataset.layout==='docked' && !window.matchMedia('(max-width: 980px)').matches;
+}
+function syncChatResizer() {
+  if(!chatCanResize()) return;
+  const {minHeight,maxHeight}=chatResizeBounds();
+  if(chatPanelHeight===null) chatPanelHeight=chatPanel.getBoundingClientRect().height || 360;
+  chatPanelHeight=Math.round(Math.max(minHeight,Math.min(maxHeight,chatPanelHeight)));
+  chatResizer.setAttribute('aria-valuemin',String(Math.round(minHeight)));
+  chatResizer.setAttribute('aria-valuemax',String(Math.round(maxHeight)));
+  chatResizer.setAttribute('aria-valuenow',String(chatPanelHeight));
+  chatResizer.setAttribute('aria-valuetext',`${chatPanelHeight} píxeles de altura para el chat`);
+  if(chatPanel.style.getPropertyValue('--chat-height')) chatPanel.style.setProperty('--chat-height',`${chatPanelHeight}px`);
+}
+function setChatPanelHeight(value) {
+  if(!chatCanResize()) return;
+  const {minHeight,maxHeight}=chatResizeBounds();
+  chatPanelHeight=Math.round(Math.max(minHeight,Math.min(maxHeight,value)));
+  chatPanel.style.setProperty('--chat-height',`${chatPanelHeight}px`);
+  syncChatResizer();
+}
+chatResizer.addEventListener('pointerdown',event=>{
+  if(!chatCanResize()) return;
+  syncChatResizer();event.preventDefault();chatDragging=true;chatResizer.setPointerCapture(event.pointerId);
+});
+chatResizer.addEventListener('pointermove',event=>{
+  if(!chatDragging) return;
+  const dashboardTop=dashboard.getBoundingClientRect().top;
+  const dockOffset=assistantDock.getBoundingClientRect().top-dashboardTop;
+  const resizerHeight=chatResizer.getBoundingClientRect().height || 12;
+  setChatPanelHeight(event.clientY-dashboardTop-dockOffset-resizerHeight/2);
+});
+chatResizer.addEventListener('pointerup',()=>{chatDragging=false;});
+chatResizer.addEventListener('pointercancel',()=>{chatDragging=false;});
+chatResizer.addEventListener('keydown',event=>{
+  if(!chatCanResize()) return;
+  syncChatResizer();
+  const step=event.shiftKey ? 80 : 24;
+  if(event.key==='ArrowUp') setChatPanelHeight(chatPanelHeight+step);
+  else if(event.key==='ArrowDown') setChatPanelHeight(chatPanelHeight-step);
+  else if(event.key==='Home') setChatPanelHeight(chatResizeBounds().minHeight);
+  else if(event.key==='End') setChatPanelHeight(chatResizeBounds().maxHeight);
+  else return;
+  event.preventDefault();
+});
+window.addEventListener('resize',syncChatResizer);
+syncChatResizer();
 const baseInicial = C.baseInicial || 'sat', fondoInicial = C.bases[baseInicial];
 let base = L.tileLayer(fondoInicial.url, { attribution: fondoInicial.attribution, maxZoom: 19 }).addTo(map);
 document.querySelectorAll('[name=base]').forEach(r => {
@@ -59,7 +168,9 @@ function positionPlant() {
   plantAssistant.dataset.position=position;
   $('#plant-welcome').textContent=mapActive ? '¡Hola! Soy Fruti, tu asistente de campo. ¡Exploremos!' : '¿En qué te ayudo?';
   $('#plant-welcome').setAttribute('aria-label',mapActive ? 'Abrir el chat de Fruticebada' : 'Abrir el chat: ¿En qué te ayudo?');
+  $('#plant-welcome').hidden=position==='map';
 }
+positionPlant();
 const estilo = feature => {
   const v = valores[feature.id], selected = String(feature.id) === selectedParcelId;
   return { color: selected ? '#ffb000' : '#fff', weight: selected ? 3 : ($('#contornos').checked ? 1.5 : 0),
@@ -293,7 +404,7 @@ function vista(view) {
   $('#container').hidden = view !== 'mapa'; $('#tabla').hidden = view !== 'tabla'; $('#documentacion').hidden = view !== 'documentacion';
   document.querySelectorAll('.nav a[data-v]').forEach(a => a.classList.toggle('active', a.dataset.v === view));
   positionPlant();
-  if (view === 'mapa') requestAnimationFrame(() => { map.invalidateSize(); ajustarLimites(); });
+  if (view === 'mapa') { syncWorkspaceResizer(); requestAnimationFrame(() => { map.invalidateSize(); ajustarLimites(); }); }
   if (view === 'documentacion') window.DOCUMENTATION.open();
   window.CHAT?.viewChanged(view);
 }

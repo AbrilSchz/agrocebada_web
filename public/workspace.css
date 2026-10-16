@@ -44,9 +44,18 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 .global-search input:focus-visible { outline: none; }
 #container { display: flex; }
 #mobile-workspace { display: none; }
-#mapa { flex: 0 0 65%; max-width: 65%; width: 65%; }
+#mapa { flex: var(--map-fr, 65) 1 0px; max-width: none; width: auto; min-width: 0; }
+#workspace-resizer {
+  position: relative; z-index: 2; display: flex; flex: 0 0 12px; align-items: center; justify-content: center;
+  border: 0; background: transparent; cursor: col-resize; touch-action: none; user-select: none;
+}
+#workspace-resizer::after {
+  content: ""; width: 3px; height: 44px; border-radius: 99px; background: #b8cbbd; transition: background .15s, height .15s;
+}
+#workspace-resizer:hover::after, #workspace-resizer:focus-visible::after { height: 64px; background: #52836a; }
+#workspace-resizer:focus-visible { outline: 2px solid #52836a; outline-offset: -2px; }
 #dashboard {
-  flex: 0 0 35%; max-width: 35%; padding: 0;
+  flex: var(--dashboard-fr, 35) 1 0px; max-width: none; min-width: 0; padding: 0;
   display: flex; flex-direction: column; min-height: 0; overflow: hidden;
   border-left: 1px solid #d5e1da;
   background: radial-gradient(ellipse at top right, #eaf0e5, transparent 65%), #f5f7f6;
@@ -54,10 +63,21 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 #assistant-dock { flex: 0 0 auto; margin: 18px 18px 0; min-width: 0; scroll-margin-top: 65px; }
 #chat-panel[data-layout=docked] {
   position: static; width: 100%; max-width: none;
-  height: clamp(320px, 40dvh, 390px); max-height: calc(100dvh - 225px);
+  height: var(--chat-height, clamp(320px, 40dvh, 390px)); max-height: calc(100dvh - 225px);
   border: 1px solid #c6d8ce; border-radius: 18px; backdrop-filter: none;
   background: #fff; box-shadow: 0 5px 20px #173e320c;
 }
+#chat-resizer {
+  position: relative; z-index: 2; display: flex; flex: 0 0 12px; align-items: center; justify-content: center;
+  border: 0; background: transparent; cursor: row-resize; touch-action: none; user-select: none;
+}
+#chat-resizer::after {
+  content: ""; width: 44px; height: 3px; border-radius: 99px; background: #b8cbbd; transition: background .15s, width .15s;
+}
+#chat-resizer:hover::after, #chat-resizer:focus-visible::after { width: 64px; background: #52836a; }
+#chat-resizer:focus-visible { outline: 2px solid #52836a; outline-offset: -2px; }
+#dashboard:has(#chat-panel[hidden]) #chat-resizer,
+#dashboard:has(#chat-panel[data-layout=floating]) #chat-resizer { display: none; }
 #chat-panel[data-layout=floating] {
   position: fixed; inset: auto 132px 156px auto; width: min(420px, calc(100vw - 164px));
   max-width: none; height: min(540px, calc(100dvh - 32px));
@@ -167,20 +187,6 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   align-items: center;
   gap: 10px;
 }
-#plant-assistant > img {
-  display: block;
-  width: 70px;
-  height: 90px;
-  object-fit: contain;
-  transform-origin: 50% 93%;
-  animation: plant-sway 5s ease-in-out infinite;
-  pointer-events: none;
-  user-select: none;
-}
-#plant-assistant[data-position="welcome"] > img {
-  grid-column: 1;
-  grid-row: 1;
-}
 #plant-welcome {
   position: relative;
   width: 100%;
@@ -243,15 +249,14 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 #plant-assistant[data-position="floating-selected"],
 #plant-assistant[data-position="floating-page"] {
   position: fixed;
-  right: 16px;
+  left: var(--plant-edge, 16px);
+  right: auto;
   bottom: 16px;
   z-index: 1105;
   width: 88px;
   height: 124px;
   pointer-events: none;
 }
-#plant-assistant[data-position="map"] > img,
-#plant-assistant[data-position^="floating"] > img { width: 100%; height: 100%; }
 #plant-assistant[data-position="map"] #plant-welcome,
 #plant-assistant[data-position="floating-selected"] #plant-welcome {
   position: absolute;
@@ -278,11 +283,13 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 }
 #plant-assistant[data-position="floating-page"] #plant-welcome {
   position: absolute;
-  right: 100px;
-  bottom: 78px;
+  right: auto;
+  bottom: calc(100% - 16px);
+  left: 50%;
   width: max-content;
   max-width: min(210px, 58vw);
   background: #fffdf5;
+  transform: translateX(-50%);
 }
 #plant-assistant[data-position="floating-page"][data-chat-open="true"] #plant-welcome {
   visibility: hidden;
@@ -299,18 +306,14 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   background: #fffdf5;
 }
 #plant-assistant[data-position="floating-page"] #plant-welcome::after {
-  left: auto;
-  right: -7px;
+  left: calc(50% - 6px);
+  right: auto;
   top: auto;
-  bottom: 12px;
+  bottom: -7px;
   border: 0;
   border-right: 1px solid #d9bc76;
   border-bottom: 1px solid #d9bc76;
   background: #fffdf5;
-}
-@keyframes plant-sway {
-  0%, 100% { transform: rotate(-2deg); }
-  50% { transform: rotate(2deg); }
 }
 #layers-button[aria-expanded=true] { outline: 2px solid #e5c776; }
 #map-navigation { top: 82px; left: 58px; padding: 5px 10px; background: #133d32e8; font-size: 11px; border-radius: 10px; }
@@ -364,8 +367,10 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   #mobile-workspace button { min-height: 38px; border: 1px solid #dce7de; border-radius: 9px; background: #fff; color: #315d45; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; }
   #mobile-workspace button:last-child { background: #e6f0e5; }
   #mapa { width: 100%; max-width: none; height: 62dvh; min-height: 430px; scroll-margin-top: 55px; }
+  #workspace-resizer { display: none; }
   #dashboard { width: 100%; max-width: none; min-height: 0; border-left: 0; border-top: 1px solid var(--line); overflow: visible; display: flex; }
   #assistant-dock { margin: 20px 20px 0; }
+  #chat-resizer { display: none; }
   #chat-panel[data-layout=docked] { height: 340px; max-height: none; }
   #dashboard-results { flex: auto; overflow: visible; padding: 22px 20px 30px; }
   #dashboard-content { max-width: 740px; margin-inline: auto; }
@@ -392,7 +397,13 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   #map-tools button { flex: 1; max-width: none; min-height: 46px; font-size: 10px; padding: 8px; }
   #plant-assistant[data-position="map"],
   #plant-assistant[data-position^="floating"] { right: 10px; bottom: 12px; width: 72px; height: 104px; }
+  #plant-assistant[data-position^="floating"] { --plant-edge: 10px; right: auto; left: 10px; }
   #plant-assistant[data-position^="floating"] #plant-welcome { right: 84px; bottom: 66px; padding: 8px 10px; font-size: 11px; }
+  #plant-assistant[data-position="floating-page"] #plant-welcome {
+    right: auto;
+    bottom: calc(100% - 28px);
+    left: 50%;
+  }
   #map-navigation { top: 74px; left: 58px; right: 12px; max-width: none; }
   #map-navigation span { font-size: 10px; }
   #layers-panel { top: 69px; right: 12px; width: calc(100% - 24px); max-height: calc(100% - 85px); }
@@ -400,6 +411,7 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   #map-legend { left: 12px; bottom: 30px; width: 225px; padding: 11px 13px; }
   #map-status { left: 12px; top: 128px; right: 12px; }
   #assistant-dock { margin: 16px 12px 0; }
+  #chat-resizer { display: none; }
   #dashboard-results { padding: 20px 12px 28px; }
   #chat-panel[data-layout=docked] { height: 355px; }
   #chat-panel[data-layout=floating] {
@@ -450,7 +462,7 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 }
 @media (min-width: 981px) and (max-height: 650px) {
   #assistant-dock { margin-top: 10px; }
-  #chat-panel[data-layout=docked] { height: 280px; max-height: none; }
+  #chat-panel[data-layout=docked] { height: var(--chat-height, 280px); max-height: none; }
   .chat-heading { padding-block: 6px; }
   .chat-heading .eyebrow { display: none; }
   .chat-heading h2 { margin: 0; }
@@ -467,5 +479,4 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 }
 @media (prefers-reduced-motion: reduce) {
   #container { scroll-behavior: auto; }
-  #plant-assistant > img { animation: none; }
 }
