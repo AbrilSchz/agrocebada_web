@@ -52,6 +52,30 @@
 :root[data-theme="dark"] .nav nav a { color: #bdcbc1; }
 :root[data-theme="dark"] .nav nav a.active { color: #fff; background: #315c46; }
 :root[data-theme="dark"] .nav nav a:hover:not(.active) { color: #fff; background: #2b3b31; }
+:root[data-theme="dark"] #plant-welcome {
+  border-color: #856e3e;
+  background: #28352b;
+  color: #d9f0df;
+}
+:root[data-theme="dark"] #plant-welcome::after {
+  border-color: #856e3e;
+  background: #28352b;
+}
+:root[data-theme="dark"] #plant-welcome:hover { background: #334436; }
+:root[data-theme="dark"] #plant-assistant[data-position="floating-page"] #plant-welcome {
+  border-color: #856e3e;
+  background: #28352b;
+  color: #d9f0df;
+}
+:root[data-theme="dark"] #plant-assistant[data-position="floating-page"] #plant-welcome::after {
+  border-color: #856e3e;
+  background: #28352b;
+}
+:root[data-theme="dark"] #plant-assistant[data-position="floating-page"] #plant-welcome:hover { background: #334436; }
+:root[data-theme="dark"] #welcome-guide {
+  border-color: var(--surface-border);
+  background: linear-gradient(135deg, #202b24, #242c24);
+}
 
 :root[data-theme="dark"] .global-search,
 :root[data-theme="dark"] .theme-toggle {
@@ -191,6 +215,12 @@
 :root[data-theme="dark"] #chat-context { background: #17201a; }
 :root[data-theme="dark"] .chat-user { background: #294335; }
 :root[data-theme="dark"] .chat-assistant { border-color: var(--surface-border); background: #252f37; }
+:root[data-theme="dark"] .chat-user > p:not(.chat-applied) { color: #b9dfc6; }
+:root[data-theme="dark"] .chat-assistant > p:not(.chat-applied) { color: #a8d6b5; }
+:root[data-theme="dark"] .chat-message .chat-applied { color: #91c9a4; border-color: var(--surface-border); }
+:root[data-theme="dark"] .chat-footer button,
+:root[data-theme="dark"] #chat-mic { color: #a8d6b5; }
+:root[data-theme="dark"] #chat-status { color: #a4cbb0; }
 :root[data-theme="dark"] .chat-suggestions button { border-color: #5b5134; background: #393422; color: #e4d7ad; }
 :root[data-theme="dark"] .chat-suggestions button:hover { background: #4a4026; }
 :root[data-theme="dark"] .chat-heading button { background: #354239; color: var(--deep); }

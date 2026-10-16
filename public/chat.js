@@ -1,6 +1,6 @@
 (() => {
   const $=s=>document.querySelector(s);
-  let context={parcelId:null,campaign:'agrocebada-final',model:'ensamble-50-50-v1'},messages=[],controller=null,sequence=0,busy=false,onOpen=null,applying=false,voiceState='idle';
+  let context={parcelId:null,campaign:'agrocebada-final',model:'ensamble-50-50-v1'},messages=[],controller=null,sequence=0,busy=false,onOpen=null,applying=false,voiceState='idle',activeView='mapa',mapChatOpen=true;
   function error(message) {$('#chat-error').textContent=message;$('#chat-error').hidden=false;}
   function render() {
     const log=$('#chat-messages');log.replaceChildren();
@@ -35,15 +35,17 @@
   function position() {
     const panel=$('#chat-panel'),onMap=!$('#container').hidden;
     // En el mapa ocupa su propio espacio; en las otras vistas acompaña como ventana.
-    (onMap ? $('#assistant-dock') : document.body).append(panel);
+    const parent=onMap ? $('#assistant-dock') : document.body;
+    if(panel.parentElement!==parent) parent.append(panel);
     panel.setAttribute('data-layout',onMap ? 'docked' : 'floating');
     panel.setAttribute('role',onMap ? 'region' : 'dialog');
     panel.style.bottom='';panel.style.maxHeight='';
   }
   function toggle(open,focus=true) {
-    $('#chat-panel').hidden=!open;$('#chat-toggle').setAttribute('aria-expanded',String(open));$('#chat-reopen').setAttribute('aria-expanded',String(open));
-    $('#chat-toggle').hidden=open;
-    if(open) {onOpen?.();position();if(focus) $('#chat-input').focus();}else {voice.cancel();if(focus) ($('#container').hidden ? $('#chat-reopen') : $('#chat-toggle')).focus();}
+    $('#chat-panel').hidden=!open;$('#plant-welcome').setAttribute('aria-expanded',String(open));
+    $('#plant-assistant').dataset.chatOpen=String(open);
+    if(!$('#container').hidden) mapChatOpen=open;
+    if(open) {onOpen?.();position();if(focus) $('#chat-input').focus();}else {voice.cancel();if(focus) $('#plant-welcome').focus();}
   }
   function history() {
     const rows=messages.slice(-12).map(item=>({role:item.role,content:item.content.slice(0,2000)}));
@@ -73,8 +75,6 @@
       messages.splice(previous);$('#chat-input').value=message;render();error(e.message);
     } finally {if(own===sequence) {controller=null;setBusy(false);if(!$('#chat-panel').hidden) $('#chat-input').focus();}}
   }
-  $('#chat-toggle').onclick=()=>toggle($('#chat-panel').hidden);
-  $('#chat-reopen').onclick=()=>toggle($('#chat-panel').hidden);
   $('#chat-close').onclick=()=>toggle(false);
   $('#chat-reset').onclick=()=>{reset();$('#chat-input').focus();};
   $('#chat-mic').onclick=()=>{$('#chat-error').hidden=true;voice.start();};
@@ -83,8 +83,16 @@
   document.querySelectorAll('[data-chat-question]').forEach(button=>button.onclick=()=>{if(busy) return;$('#chat-input').value=button.dataset.chatQuestion;return submit();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape' && !$('#chat-panel').hidden && ($('#container').hidden || $('#chat-panel').contains(e.target))) {e.preventDefault();e.stopImmediatePropagation();toggle(false);}},true);
   window.addEventListener('resize',position);
-  window.CHAT={setContext,open:()=>toggle(true),close:()=>toggle(false,false),onOpen:callback=>{onOpen=callback;},
-    viewChanged:view=>{$('#chat-reopen').hidden=view==='mapa';position();},
+  window.CHAT={setContext,open:(focus=true)=>toggle(true,focus),close:()=>toggle(false,false),onOpen:callback=>{onOpen=callback;},
+    viewChanged:view=>{
+      if(activeView==='mapa' && view!=='mapa') {
+        mapChatOpen=!$('#chat-panel').hidden;
+        toggle(false,false);
+      }
+      activeView=view;
+      position();
+      if(view==='mapa' && mapChatOpen) toggle(true,false);
+    },
     openExplanation:(text,mode)=>{if(typeof text!=='string' || !text.trim()) return;reset();messages=[{role:'user',content:'Interpreta esta parcela en un párrafo breve, sin repetir las tarjetas.'},{role:'assistant',content:text}];modeLabel(mode);render();toggle(true);}
   };
   setContext(context);render();toggle(true,false);

@@ -25,6 +25,11 @@ apartados desplegables. Tiene cierre explícito y un botón para limpiar filtros
 Puede usarse junto al chat: no se cierran entre sí. La escala permanece abajo a
 la izquierda del mapa y la búsqueda por ID está en la cabecera.
 
+Al iniciar, la espiga saluda junto a los pasos de **Explora el territorio** y
+abre el chat existente. Al seleccionar una parcela, se mueve al mapa sin la
+burbuja de bienvenida; si se cambia a otra vista, permanece flotando y conserva
+el acceso al chat. Los mensajes continúan usando `POST /api/chat`.
+
 En tablet y móvil, mapa, asistente y ficha se apilan para conservar el ancho de
 lectura. Una barra ofrece accesos a **Mapa**, **Resultados** y **Asistente**.
 En las vistas de tabla y documentación, el chat se convierte en una ventana
