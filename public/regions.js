@@ -65,7 +65,7 @@
       const selected=this.selected===feature.properties.nombre;
       return {color:this.config.estados[feature.properties.entidad].color,weight:hover || selected ? 2.8 : 1.3,opacity:.95,fillColor:this.config.estados[feature.properties.entidad].color,fillOpacity:hover ? .26 : selected ? .16 : .065,className:'municipality-button'};
     }
-    choose(layer) {this.onMunicipality(layer.feature.properties,layer.getBounds());}
+    choose(layer) {if(!this.labelsAllowed()) return;this.onMunicipality(layer.feature.properties,layer.getBounds());}
     setVisible(visible) {
       this.visible=visible;this.blur.hidden=!visible;
       this.updateLabels();
@@ -81,11 +81,15 @@
           path.addEventListener('keydown',e=>{if(e.key==='Enter' || e.key===' ') {e.preventDefault();this.choose(layer);}});
         });
       }
+      this.updateLabels();
     }
     labelsAllowed() {return this.visible && this.map.getZoom()<(this.config.zoomEtiquetasMax ?? 14);}
     updateLabels() {
       const allowed=this.labelsAllowed();
+      this.map.getPane('municipalities').style.pointerEvents=allowed ? '' : 'none';
       this.layers.forEach((layer,key)=>{
+        const path=layer.getElement();
+        if(path) {path.style.pointerEvents=allowed ? 'auto' : 'none';path.setAttribute('tabindex',allowed ? '0' : '-1');path.setAttribute('aria-disabled',String(!allowed));}
         if(allowed && !layer.getTooltip()) layer.bindTooltip(this.labels.get(key),{sticky:true,direction:'top',className:'municipality-tooltip'});
         else if(!allowed && layer.getTooltip()) {layer.closeTooltip();layer.unbindTooltip();}
       });

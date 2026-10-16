@@ -197,6 +197,11 @@ assert(singuilucan.tooltip.includes('Singuilucan') && singuilucan.tooltip.includ
 singuilucan.openTooltip();mapZoom=13.99;mapEvents.get('zoom').forEach(fn=>fn());assert(singuilucan.getTooltip());
 mapZoom=14;mapEvents.get('zoom').forEach(fn=>fn());assert.equal(singuilucan.getTooltip(),null);assert.equal(singuilucan.tooltipOpen,false);
 singuilucan.getElement().events.focus();assert.equal(singuilucan.tooltipOpen,false,'Tampoco aparece con foco de teclado sobre el umbral');
+const beforeMunicipalityClick=motions.length;
+singuilucan.events.click();
+singuilucan.getElement().events.keydown({key:'Enter',preventDefault(){}});
+assert.equal(motions.length,beforeMunicipalityClick,'Con zoom 14 ni clic ni teclado regresan al municipio');
+assert.equal(singuilucan.getElement().attributes.tabindex,'-1');
 mapZoom=13;mapEvents.get('zoom').forEach(fn=>fn());assert(singuilucan.getTooltip().includes('Singuilucan'));
 singuilucan.events.click();
 assert.equal(vm.runInContext('geo.features.length',mapScope),23);
