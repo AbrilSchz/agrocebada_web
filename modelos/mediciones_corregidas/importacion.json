@@ -1,0 +1,14 @@
+{
+  "mediciones_archivo": 40431,
+  "parcelas": 197,
+  "capas_importadas": 32,
+  "antes": 5719,
+  "despues": 44962,
+  "capas_sinteticas_retiradas": [
+    "nir",
+    "ndvi"
+  ],
+  "mediciones_sinteticas_retiradas": 1188,
+  "sha256": "f877b3f57bbd30799b191af38d1648d0a7dab21f1eb417062061e484f014584d",
+  "integridad": "ok"
+}

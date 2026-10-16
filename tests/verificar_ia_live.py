@@ -24,6 +24,9 @@ globalThis.fetch=async(url,options)=>{
   assert.equal(options.headers['x-goog-api-key'],'test-only-key');
   const body=JSON.parse(options.body);
   assert(!options.body.includes('test-only-key'));
+  assert(!options.body.includes('DEMO: valores aleatorios'));
+  assert(!options.body.includes('Si es demo'));
+  assert(!options.body.includes('\"demonstration\":true'));
   const response=parts=>({ok:true,status:200,json:async()=>({candidates:[{content:{role:'model',parts}}]})});
   if(body.contents[0].parts[0].inlineData) {
     assert.equal(body.contents[0].parts[0].inlineData.mimeType,'audio/ogg');
@@ -47,7 +50,7 @@ globalThis.fetch=async(url,options)=>{
 ''')
     with socket.socket() as sock:
         sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
-    env={**os.environ,'DB_PATH':str(copied),'READ_ONLY':'1','DEMO_MODE':'0','LLM_MODE':'live','GEMINI_API_KEY':'test-only-key','PORT':str(port)}
+    env={**os.environ,'DB_PATH':str(copied),'READ_ONLY':'1','DEMO_MODE':'1','LLM_MODE':'live','GEMINI_API_KEY':'test-only-key','PORT':str(port)}
     process=subprocess.Popen(['node','--import',str(preload),'server.js'],cwd=ROOT,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
     base=f'http://127.0.0.1:{port}'
     def call(path,body=None,expected=200):
@@ -64,7 +67,7 @@ globalThis.fetch=async(url,options)=>{
                 if process.poll() is not None:raise RuntimeError(process.stdout.read())
                 time.sleep(.1)
         else:raise RuntimeError('No arrancó el servidor')
-        assert call('/api/chat/config')=={'voice':True}
+        assert call('/api/chat/config')=={'voice':True,'mode':'live','configured':True}
         result=call('/api/chat',{'message':'Consulta otra parcela y filtra municipio','ui':{'vista':'mapa','capa':'final_prec','metrica':None,'filtros':{}}})
         assert result['mode']=='live' and '3.5' in result['reply']
         assert result['actions']==[{'type':'filtrar_parcelas','args':{'municipio':'Singuilucan','minimo':0,'maximo':5}}]

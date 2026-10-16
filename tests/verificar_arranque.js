@@ -138,7 +138,7 @@ assert.equal(success.nodes.get('#chat-panel').style['--chat-height'],'590px','El
 chatResizer.listeners.pointermove({clientY:100});
 assert.equal(chatResizer['aria-valuenow'],'220','El divisor limita la altura mínima del chat');
 chatResizer.listeners.pointerup();
-chatResizer.listeners.keydown({key:'ArrowUp',preventDefault(){}});
+chatResizer.listeners.keydown({key:'ArrowDown',preventDefault(){}});
 assert.equal(chatResizer['aria-valuenow'],'244','Las flechas verticales ajustan la altura del chat');
 chatResizer.listeners.keydown({key:'End',preventDefault(){}});
 assert.equal(chatResizer['aria-valuenow'],'590','Fin lleva la altura del chat al límite máximo');

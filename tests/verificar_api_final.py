@@ -57,6 +57,11 @@ with tempfile.TemporaryDirectory() as tmp:
             assert sum(v is not None for v in data['valores'].values())==count
         assert len([r for r in get('/api/capas') if r['id'].startswith('final_')])==5
         assert len(get('/api/capas/final_prec/fechas'))==7
+        assert len(get('/api/capas/chirps_prec/fechas'))==7
+        assert len(get('/api/capas'))==37
+        assert not any('DEMO' in (r.get('descripcion') or '') for r in get('/api/capas'))
+        assert abs(get('/api/capas/chirps_prec/valores?fecha=2025-04-15')['valores']['AGC_001']-23.04368782043457)<1e-9
+        assert not ref['dataset']['demonstration']
         with urllib.request.urlopen(base+'/',timeout=5) as r:page=r.read().decode()
         assert '>API</a>' not in page and 'id="results-button"' not in page
         assert 'id="map-legend"' in page and 'id="map-source"' in page
@@ -92,7 +97,7 @@ with tempfile.TemporaryDirectory() as tmp:
         for message,action in commands:
             response=chat({'message':message})
             assert response['mode']=='local' and response['actions'][0]['type']==action
-        assert get('/api/chat/config')=={'voice':False}
+        assert get('/api/chat/config')=={'voice':False,'mode':'mock','configured':False}
         for audio,status in [({'mimeType':'text/html','audio':'bad'},400),({'mimeType':'audio/webm','audio':'A'*136+'=='},400)]:
             req=urllib.request.Request(base+'/api/chat/voz',data=json.dumps(audio).encode(),headers={'Content-Type':'application/json'},method='POST')
             try:urllib.request.urlopen(req);raise AssertionError('Audio inválido admitido')

@@ -24,6 +24,7 @@ resizeObserver.observe($('#map'));
 const workspace=$('#container'),workspaceResizer=$('#workspace-resizer');
 const dashboard=$('#dashboard'),assistantDock=$('#assistant-dock'),chatPanel=$('#chat-panel'),chatResizer=$('#chat-resizer');
 let workspaceSplit=65,workspaceDragging=false;
+try {const saved=Number(localStorage.getItem('fruticebada-map-width'));if(saved>0 && saved<100) workspaceSplit=saved;} catch {}
 let chatPanelHeight=null,chatDragging=false;
 function workspaceResizeBounds() {
   const rect=workspace.getBoundingClientRect(),dividerWidth=workspaceResizer.getBoundingClientRect().width || 12;
@@ -50,6 +51,7 @@ function setWorkspaceSplit(value) {
   workspace.style.setProperty('--map-fr',String(workspaceSplit));
   workspace.style.setProperty('--dashboard-fr',String(100-workspaceSplit));
   syncWorkspaceResizer();
+  try {localStorage.setItem('fruticebada-map-width',String(workspaceSplit));} catch {}
   requestAnimationFrame(()=>{ if(!workspace.hidden) { map.invalidateSize({pan:false});ajustarLimites(); } });
 }
 workspaceResizer.addEventListener('pointerdown',event=>{
@@ -121,8 +123,8 @@ chatResizer.addEventListener('keydown',event=>{
   if(!chatCanResize()) return;
   syncChatResizer();
   const step=event.shiftKey ? 80 : 24;
-  if(event.key==='ArrowUp') setChatPanelHeight(chatPanelHeight+step);
-  else if(event.key==='ArrowDown') setChatPanelHeight(chatPanelHeight-step);
+  if(event.key==='ArrowUp') setChatPanelHeight(chatPanelHeight-step);
+  else if(event.key==='ArrowDown') setChatPanelHeight(chatPanelHeight+step);
   else if(event.key==='Home') setChatPanelHeight(chatResizeBounds().minHeight);
   else if(event.key==='End') setChatPanelHeight(chatResizeBounds().maxHeight);
   else return;

@@ -63,7 +63,7 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 #assistant-dock { flex: 0 0 auto; margin: 18px 18px 0; min-width: 0; scroll-margin-top: 65px; }
 #chat-panel[data-layout=docked] {
   position: static; width: 100%; max-width: none;
-  height: var(--chat-height, clamp(320px, 40dvh, 390px)); max-height: calc(100dvh - 225px);
+  height: var(--chat-height, clamp(360px, 55dvh, 560px)); max-height: calc(100dvh - 225px);
   border: 1px solid #c6d8ce; border-radius: 18px; backdrop-filter: none;
   background: #fff; box-shadow: 0 5px 20px #173e320c;
 }
@@ -371,7 +371,7 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   #dashboard { width: 100%; max-width: none; min-height: 0; border-left: 0; border-top: 1px solid var(--line); overflow: visible; display: flex; }
   #assistant-dock { margin: 20px 20px 0; }
   #chat-resizer { display: none; }
-  #chat-panel[data-layout=docked] { height: 340px; max-height: none; }
+  #chat-panel[data-layout=docked] { height: min(520px, 72dvh); max-height: none; }
   #dashboard-results { flex: auto; overflow: visible; padding: 22px 20px 30px; }
   #dashboard-content { max-width: 740px; margin-inline: auto; }
   .workspace-heading { max-width: 740px; margin-inline: auto; }
@@ -413,7 +413,7 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   #assistant-dock { margin: 16px 12px 0; }
   #chat-resizer { display: none; }
   #dashboard-results { padding: 20px 12px 28px; }
-  #chat-panel[data-layout=docked] { height: 355px; }
+  #chat-panel[data-layout=docked] { height: min(520px, 72dvh); }
   #chat-panel[data-layout=floating] {
     inset: 12px 12px 155px;
     width: auto;
