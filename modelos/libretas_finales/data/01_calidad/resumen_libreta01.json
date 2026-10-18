@@ -1,0 +1,59 @@
+{
+  "version": "1.0-calidad-y-contexto",
+  "ventana_temporal": {
+    "inicio": "2025-04-01",
+    "fin": "2025-10-31"
+  },
+  "n_parcelas_totales": 197,
+  "n_entrenamiento": 138,
+  "n_prediccion": 59,
+  "estados": {
+    "Puebla": 100,
+    "Hidalgo": 51,
+    "Tlaxcala": 46
+  },
+  "municipios": {
+    "Chignahuapan": 100,
+    "Calpulalpan": 44,
+    "Singuilucan": 23,
+    "Almoloya": 14,
+    "Cuautepec de Hinojosa": 9,
+    "Emiliano Zapata": 3,
+    "Nanacamilpa de Mariano Arista": 2,
+    "Tepeapulco": 1,
+    "Apan": 1
+  },
+  "capturas_ventana_basico": 16296,
+  "capturas_ventana_pro": 26255,
+  "indices_basico": [
+    "crc",
+    "dswi2",
+    "dswi3",
+    "dswi4",
+    "dswi5",
+    "emsi",
+    "enddi",
+    "endwi",
+    "evi",
+    "fapar",
+    "lai",
+    "mcrc",
+    "mra",
+    "msi",
+    "nddi",
+    "ndsvi",
+    "ndti",
+    "ndvi",
+    "ndwi",
+    "savi",
+    "srndi",
+    "sti",
+    "vi6t"
+  ],
+  "indices_pro": [
+    "evi",
+    "lai",
+    "msavi",
+    "ndvi"
+  ]
+}
