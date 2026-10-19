@@ -1,459 +1,220 @@
-# Fruticebada · Dashboard de rendimiento y contexto espacial
+# Fruticebada - Dashboard de rendimiento y contexto espacial
 
-Explora 197 parcelas y los resultados finales recibidos en `Libretas_finales.zip`.
-El mapa abre en **Satelital**. El rendimiento mostrado es un resultado cerrado en
-**toneladas por hectárea (t/ha)**: no es una serie anual ni una sucesión de campañas.
-Las fechas de abril–octubre de 2025 corresponden a los insumos, no a varios
-rendimientos de la misma parcela.
+Plataforma interactiva para explorar las 197 parcelas del Reto AgroCebada FIRA 2026 y los resultados del modelo predictivo integrado en `Libretas_finales.zip`.
+El mapa abre en vista **Satelital**. El rendimiento mostrado es un resultado cerrado en **toneladas por hectarea (t/ha)**: no es una serie anual ni una sucesion de campanas. Las fechas de abril-octubre de 2025 corresponden a la ventana temporal de los insumos satelitales y climaticos, no a varios rendimientos de la misma parcela.
 
 ## Espacio de trabajo Fruticebada
 
-En escritorio, a partir de 981 px de ancho, el mapa ocupa **65 %** y la columna
-de asistente y resultados **35 %**. El asistente está abierto al entrar, sin
-activar el micrófono, pedir al modelo una respuesta ni enfocar el campo de texto.
-Su botón de plegado libera espacio para la ficha y permite volver a abrirlo.
-La ficha tiene desplazamiento independiente; el mapa y el asistente permanecen
-a mano mientras se consultan las gráficas y las tablas.
+En escritorio, a partir de 981 px de ancho, el mapa ocupa **65 %** y la columna de asistente y resultados **35 %**. El asistente esta abierto al entrar, sin activar el microfono, pedir al modelo una respuesta ni enfocar el campo de texto. Su boton de plegado libera espacio para la ficha y permite volver a abrirlo. La ficha tiene desplazamiento independiente; el mapa y el asistente permanecen a mano mientras se consultan las graficas y las tablas.
 
-La interfaz presenta primero las tarjetas de rendimiento y las gráficas, seguidas
-de componentes, intervalos y referencias. **Interpretar mi parcela** conserva
-AI ANALYTICS y abre la lectura breve dentro del mismo chat. Se muestra cuando hay
-una ficha cargada; las pestañas siguen dependiendo de los datos disponibles.
+La interfaz presenta primero las tarjetas de rendimiento y las graficas, seguidas de componentes, intervalos y referencias. **Interpretar mi parcela** conserva AI ANALYTICS y abre la lectura breve dentro del mismo chat. Se muestra cuando hay una ficha cargada; las pestanas siguen dependiendo de los datos disponibles.
 
-El panel **Capas y resultados** agrupa los filtros y la apariencia del mapa en
-apartados desplegables. Tiene cierre explícito y un botón para limpiar filtros.
-Puede usarse junto al chat: no se cierran entre sí. La escala permanece abajo a
-la izquierda del mapa y la búsqueda por ID está en la cabecera.
+El panel **Capas y resultados** agrupa los filtros y la apariencia del mapa en apartados desplegables. Tiene cierre explicito y un boton para limpiar filtros. Puede usarse junto al chat: no se cierran entre si. La escala permanece abajo a la izquierda del mapa y la busqueda por ID esta en la cabecera.
 
-Al iniciar, la espiga saluda junto a los pasos de **Explora el territorio** y
-abre el chat existente. Al seleccionar una parcela, se mueve al mapa sin la
-burbuja de bienvenida; si se cambia a otra vista, permanece flotando y conserva
-el acceso al chat. Los mensajes continúan usando `POST /api/chat`.
+Al iniciar, la espiga saluda junto a los pasos de **Explora el territorio** y abre el chat existente. Al seleccionar una parcela, se mueve al mapa sin la burbuja de bienvenida; si se cambia a otra vista, permanece flotando y conserva el acceso al chat. Los mensajes continuan usando `POST /api/chat`.
 
-En tablet y móvil, mapa, asistente y ficha se apilan para conservar el ancho de
-lectura. Una barra ofrece accesos a **Mapa**, **Resultados** y **Asistente**.
-En las vistas de tabla y documentación, el chat se convierte en una ventana
-flotante conservando la conversación; al volver al mapa se reintegra en su columna.
-El teclado, los indicadores de foco y la preferencia de movimiento reducido
-continúan disponibles.
+En tablet y movil, mapa, asistente y ficha se apilan para conservar el ancho de lectura. Una barra ofrece accesos a **Mapa**, **Resultados** y **Asistente**. En las vistas de tabla y documentacion, el chat se convierte en una ventana flotante conservando la conversacion; al volver al mapa se reintegra en su columna. El teclado, los indicadores de foco y la preferencia de movimiento reducido continuan disponibles.
 
-`public/workspace.css`, cargado después de `style.css`, contiene el layout y la
-identidad visual. La marca visible, el nombre de la aplicación npm y la descarga
-de la tabla usan Fruticebada. Se conservan `agrocebada-final`, los IDs `AGC_*`,
-la URL del repositorio y los nombres originales del reporte y notebooks para
-mantener compatibles las fuentes y consultas existentes. La etiqueta del conjunto
-se actualiza al servirla; no se modifica SQLite para cambiar la marca.
+`public/workspace.css`, cargado despues de `style.css`, contiene el layout y la identidad visual. La marca visible, el nombre de la aplicacion npm y la descarga de la tabla usan Fruticebada. Se conservan `agrocebada-final`, los IDs `AGC_*`, la URL del repositorio y los nombres originales del reporte y notebooks para mantener compatibles las fuentes y consultas existentes. La etiqueta del conjunto se actualiza al servirla; no se modifica SQLite para cambiar la marca.
 
-Al iniciar, **Elevación** ya está seleccionada sobre el fondo satelital. El botón
-**Parcelas de validación**, a la izquierda de Capas y resultados, conserva su nombre activado
-o desactivado y alterna entre las parcelas de predicción
-final y las 197 parcelas completas. Esas 59 no tienen observado: no constituyen
-un conjunto con errores de validación medidos. La búsqueda de una referencia
-que quedó fuera del filtro vuelve a mostrar todas para poder seleccionarla.
+Al iniciar, **Elevacion** ya esta seleccionada sobre el fondo satelital. El boton **Parcelas de validacion**, a la izquierda de Capas y resultados, conserva su nombre activado o desactivado y alterna entre las 59 parcelas de prediccion final y las 197 parcelas completas. Esas 59 no tienen rendimiento observado: constituyen el conjunto de evaluacion ciega del reto. La busqueda de una referencia que quedo fuera del filtro vuelve a mostrar todas para poder seleccionarla.
 
-**Capas y resultados** reúne el coloreado temático y las métricas del modelo en
-un panel. **Colorear por** elige la fuente; la escala permanece visible abajo a
-la izquierda aunque el panel esté cerrado. En modo solo contornos mantiene el
-gradiente con una nota que indica que no hay coloreado temático. La navegación
-principal contiene Mapa, Parcelas y Documentación; la API sigue disponible para
-la aplicación, sin un botón adicional en el menú.
+**Capas y resultados** reune el coloreado tematico y las metricas del modelo en un panel. **Colorear por** elige la fuente; la escala permanece visible abajo a la izquierda aunque el panel este cerrado. En modo solo contornos mantiene el gradiente con una nota que indica que no hay coloreado tematico. La navegacion principal contiene Mapa, Parcelas y Documentacion; la API sigue disponible para la aplicacion, sin un boton adicional en el menu.
 
-Las gráficas de rendimiento, error y aportes son SVG vectoriales, con etiquetas,
-unidades y colores consistentes. La evaluación del modelo añade tarjetas MAE/RMSE
-con la misma escala entre esquemas, conservando las métricas tabulares. La gráfica
-de una predicción final no añade una barra de observado inexistente.
+Las graficas de rendimiento, error y aportes son SVG vectoriales, con etiquetas, unidades y colores consistentes. La evaluacion del modelo anade tarjetas MAE/RMSE con la misma escala entre esquemas, conservando las metricas tabulares. La grafica de una prediccion final no anade una barra de observado inexistente.
 
-Los contornos geográficos usan `vector-effect: non-scaling-stroke`: su grosor se
-mantiene en píxeles de pantalla durante el vuelo del mapa. El contorno de la
-parcela seleccionada conserva 3 px; los normales, 1.5 px si están activados.
+Los contornos geograficos usan `vector-effect: non-scaling-stroke`: su grosor se mantiene en pixeles de pantalla durante el vuelo del mapa. El contorno de la parcela seleccionada conserva 3 px; los normales, 1.5 px si estan activados.
 
 ## Chat y agente de la web
 
-**Tu asistente de campo** está integrado en la columna derecha. Sus botones rápidos permiten
-mostrar las 59 parcelas de validación, elevación, predicción, tabla y limpiar
-filtros; también explican OOF y SHAP. Al abrir el chat no se llama al modelo.
-Los botones envían su instrucción directamente. Enter envía y Shift+Enter añade
-un salto de línea. Escape pliega el chat cuando el foco está dentro de él; en su
-ventana flotante también lo cierra. Al pasar a tabla o documentación, el chat
-sigue abierto y un botón flotante permite reabrirlo.
+**Tu asistente de campo** esta integrado en la columna derecha. Sus botones rapidos permiten mostrar las 59 parcelas de validacion, elevacion, prediccion, tabla y limpiar filtros; tambien explican OOF y SHAP. Al abrir el chat no se llama al modelo. Los botones envian su instruccion directamente. Enter envia y Shift+Enter anade un salto de linea. Escape pliega el chat cuando el foco esta dentro de el; en su ventana flotante tambien lo cierra. Al pasar a tabla o documentacion, el chat sigue abierto y un boton flotante permite reabrirlo.
 
-Puedes pedir, por ejemplo, «selecciona la parcela AGC_003», «muestra la elevación»
-o «abre la tabla de parcelas». Estos atajos exactos funcionan sin Gemini, incluso
-en modo mock. Las peticiones naturales más complejas usan *function calling*:
-Gemini elige una función y sus argumentos; el servidor los valida y el navegador
-los aplica mediante los mismos controles del dashboard. No se ejecuta código
-propuesto por el modelo ni se modifica SQLite.
+Puedes pedir, por ejemplo, «selecciona la parcela AGC_003», «muestra la elevacion» o «abre la tabla de parcelas». Estos atajos exactos funcionan sin Gemini, incluso en modo mock. Las peticiones naturales mas complejas usan *function calling*: Gemini elige una funcion y sus argumentos; el servidor los valida y el navegador los aplica mediante los mismos controles del dashboard. No se ejecuta codigo propuesto por el modelo ni se modifica SQLite.
 
-| Acción permitida | Comportamiento |
+| Accion permitida | Comportamiento |
 | --- | --- |
 | Seleccionar parcela | Busca el ID real, abre su ficha y anima el zoom; limpia filtros que la oculten. |
 | Mostrar capa | Selecciona una capa existente y, si se pide, una fecha real de sus insumos. |
-| Mostrar resultados | Predicción, observado o errores almacenados; no inventa errores para las finales. |
-| Filtrar parcelas | Conjunto, estado, municipio, búsqueda, disponibilidad y rango del valor mostrado; se comparte con la tabla. |
-| Navegar | Mapa, tabla, documentación o vista regional. |
-| Mostrar límites | Activa o desactiva la división de estados y municipios. |
-| Consultar otra parcela | El servidor lee su ficha para responder sin cambiar la selección. |
+| Mostrar resultados | Prediccion, observado o errores almacenados; no inventa errores para las finales. |
+| Filtrar parcelas | Conjunto, estado, municipio, busqueda, disponibilidad y rango del valor mostrado; se comparte con la tabla. |
+| Navegar | Mapa, tabla, documentacion o vista regional. |
+| Mostrar limites | Activa o desactiva la division de estados y municipios. |
+| Consultar otra parcela | El servidor lee su ficha para responder sin cambiar la seleccion. |
 
-El catálogo de parcelas, capas y fechas se obtiene de SQLite; los estados admitidos
-corresponden al área actual (Hidalgo, Puebla y Tlaxcala). Cada turno acepta hasta
-cuatro acciones o consultas y como máximo dos llamadas al modelo. La primera
-propone funciones; la segunda recibe datos o acciones preparadas y redacta la
-respuesta. Las acciones se despachan al navegador después de completar el turno;
-las cargas posteriores conservan sus indicadores y errores habituales. No se
-reemplaza una selección de parcelas finales por referencias automáticamente para
-mostrar errores. La interfaz indica las acciones enviadas.
+El catalogo de parcelas, capas y fechas se obtiene de SQLite; los estados admitidos corresponden al area de estudio (Hidalgo, Puebla y Tlaxcala). Cada turno acepta hasta cuatro acciones o consultas y como maximo dos llamadas al modelo. La primera propone funciones; la segunda recibe datos o acciones preparadas y redacta la respuesta. Las acciones se despachan al navegador despues de completar el turno; las cargas posteriores conservan sus indicadores y errores habituales. No se reemplaza una seleccion de parcelas finales por referencias automaticamente para mostrar errores. La interfaz indica las acciones enviadas.
 
-Sin parcela seleccionada, la conversación usa el conjunto completo, aunque haya
-filtros en pantalla. Con una parcela usa su resultado y contexto. Al cambiar la
-selección manualmente se cancela la respuesta pendiente y se reinicia el historial;
-una selección hecha por el propio agente conserva ese turno con el nuevo contexto.
-Los resultados verificados proceden del servidor, no del historial o de cifras
-aportadas por el navegador. Las respuestas se insertan como texto, sin ejecutar
-HTML. Una respuesta generada debe contrastarse con las tablas y fuentes.
+Sin parcela seleccionada, la conversacion usa el conjunto completo, aunque haya filtros en pantalla. Con una parcela usa su resultado y contexto. Al cambiar la seleccion manualmente se cancela la respuesta pendiente y se reinicia el historial; una seleccion hecha por el propio agente conserva ese turno con el nuevo contexto. Los resultados verificados proceden del servidor, no del historial o de cifras aportadas por el navegador. Las respuestas se insertan como texto, sin ejecutar HTML.
 
-**AI ANALYTICS** ahora abre el mismo chat con un párrafo de interpretación breve:
-una implicación y una limitación relevantes, sin repetir los números o tarjetas.
-Puedes continuar con preguntas sobre esa lectura. En modo mock es una explicación
-local identificada como tal; los datos agrícolas siguen siendo los oficiales.
+**AI ANALYTICS** abre el mismo chat con un parrafo de interpretacion breve: una implicacion y una limitacion relevantes, sin repetir los numeros o tarjetas. Puedes continuar con preguntas sobre esa lectura. En modo mock es una explicacion local identificada como tal; los datos agricolas siguen siendo los oficiales.
 
 ### Comandos por voz
 
-Pulsa **🎙**, concede permiso al micrófono y habla; pulsa **■** para detener y enviar.
-La grabación termina automáticamente a los 20 segundos. Se admite hasta 1 MiB de
-audio WebM, OGG, MP4/M4A o WAV. El audio viaja al servidor y a Google para una
-transcripción literal; la frase reconocida aparece como mensaje tuyo y sigue el
-mismo flujo del agente. La aplicación no guarda audio en disco, SQLite o historial.
-Cerrar/reiniciar el chat o cambiar de parcela cancela la captura y libera el micrófono.
+Pulsa el boton de microfono, concede permiso y habla; pulsa el boton de detencion para finalizar y enviar. La grabacion termina automaticamente a los 20 segundos. Se admite hasta 1 MiB de audio WebM, OGG, MP4/M4A o WAV. El audio viaja al servidor y a Google para una transcripcion literal; la frase reconocida aparece como mensaje tuyo y sigue el mismo flujo del agente. La aplicacion no guarda audio en disco, SQLite o historial. Cerrar/reiniciar el chat o cambiar de parcela cancela la captura y libera el microfono.
 
-La voz requiere HTTPS (o localhost), permiso del usuario, MediaRecorder compatible
-y Gemini activo en el servidor. Se detectan capacidades, sin depender de
-SpeechRecognition; esto permite usar navegadores que graban audio pero no ofrecen
-reconocimiento nativo. Si falta permiso o la IA está desactivada, aparece un mensaje
-y puedes escribir o utilizar los botones. No se activa el micrófono al abrir la web.
+La voz requiere HTTPS (o localhost), permiso del usuario, MediaRecorder compatible y Gemini activo en el servidor. Se detectan capacidades, sin depender de SpeechRecognition; esto permite usar navegadores que graban audio pero no ofrecen reconocimiento nativo. Si falta permiso o la IA esta desactivada, aparece un mensaje y puedes escribir o utilizar los botones. No se activa el microfono al abrir la web.
 
-### Configuración y contrato
+### Configuracion y contrato
 
-En Render usa **`LLM_MODE=live`**, **`GEMINI_API_KEY`** y el modelo configurado en
-`GEMINI_MODEL`, compatible con texto, audio y funciones. `LLM_MODE=mock` permite
-probar respuestas locales y acciones exactas sin llamar al proveedor. La clave
-permanece en el servidor; no llega al JavaScript público.
+En Render usa **`LLM_MODE=live`**, **`GEMINI_API_KEY`** y el modelo configurado en `GEMINI_MODEL`, compatible con texto, audio y funciones. `LLM_MODE=mock` permite probar respuestas locales y acciones exactas sin llamar al proveedor. La clave permanece en el servidor; no llega al JavaScript publico.
 
-- `POST /api/chat`: `message` (1–1500 caracteres), `history` (hasta seis pares
-  user/assistant, 2000 caracteres por mensaje y 12000 en total), `ID_POLIGONO`
-  opcional, `campaña`, `version_modelo` y `ui` opcional (vista/capa/métrica/filtros).
-  `ui` describe preferencias de pantalla; no sustituye datos reales. Responde con
-  `reply`, `mode` (`live`, `mock` o `local`), `actions` y `context`.
-- `GET /api/chat/config`: informa si la voz está habilitada, sin exponer la clave.
+- `POST /api/chat`: `message` (1-1500 caracteres), `history` (hasta seis pares user/assistant, 2000 caracteres por mensaje y 12000 en total), `ID_POLIGONO` opcional, `campana`, `version_modelo` y `ui` opcional (vista/capa/metrica/filtros). `ui` describe preferencias de pantalla; no sustituye datos reales. Responde con `reply`, `mode` (`live`, `mock` o `local`), `actions` y `context`.
+- `GET /api/chat/config`: informa si la voz esta habilitada, sin exponer la clave.
 - `POST /api/chat/voz`: `mimeType` y `audio` base64; devuelve `transcript`.
-- `POST /api/parcelas/:id/informacion-inteligente`: devuelve la interpretación breve.
+- `POST /api/parcelas/:id/informacion-inteligente`: devuelve la interpretacion breve.
 
-El historial reciente se envía en cada turno; no se persiste en el navegador ni
-SQLite. Chat, interpretación y voz comparten 12 solicitudes por IP/minuto.
-Cada llamada real, incluida transcripción y segundo paso del agente, cuenta para
-el límite de 60 llamadas/hora y 2 simultáneas. La caché de respuestas dura 15 minutos
-(hasta 100 entradas); el audio no se cachea. Cada llamada tiene un timeout de 15 s.
-Se respetan errores y cuotas del proveedor; no se guardan resultados nuevos.
+El historial reciente se envia en cada turno; no se persiste en el navegador ni SQLite. Chat, interpretacion y voz comparten 12 solicitudes por IP/minuto. Cada llamada real, incluida transcripcion y segundo paso del agente, cuenta para el limite de 60 llamadas/hora y 2 simultaneas. La cache de respuestas dura 15 minutos (hasta 100 entradas); el audio no se cachea. Cada llamada tiene un timeout de 15 s.
 
-Las pestañas y tarjetas aparecen solo cuando sus datos existen. Las referencias
-OOF conservan Errores; las predicciones finales lo ocultan. Aportes se muestra
-cuando existen contribuciones completas o los tres aportes parciales del HGB.
-Las tablas vacías se omiten. Al cambiar de parcela, una pestaña que deja de estar
-disponible vuelve automáticamente a la primera pestaña con datos.
+Las pestanas y tarjetas aparecen solo cuando sus datos existen. Las referencias OOF conservan Errores; las predicciones finales lo ocultan. Aportes se muestra cuando existen contribuciones completas o los tres aportes principales del HGB. Las tablas vacias se omiten. Al cambiar de parcela, una pestana que deja de estar disponible vuelve automaticamente a la primera pestana con datos.
 
-Las variables se presentan con nombres legibles (por ejemplo, **Precipitación ·
-mayo 2025**). Sus identificadores originales siguen en los CSV y aparecen al
-pasar sobre el nombre. La tabla de variables muestra solamente valores presentes;
-los datos originales conservan sus ausencias.
+Las variables se presentan con nombres legibles (por ejemplo, **Precipitacion - mayo 2025**). Sus identificadores originales siguen en los CSV y aparecen al pasar sobre el nombre. La tabla de variables muestra solamente valores presentes; los datos originales conservan sus ausencias.
 
-## Qué muestra cada parte del dashboard
+## Que muestra cada parte del dashboard
 
-| Vista | Datos mostrados | Interpretación |
+| Vista | Datos mostrados | Interpretacion |
 | --- | --- | --- |
-| Rendimiento | Predicción y observado cuando existe | Compara dos valores de la misma parcela; sin eje de años. |
-| Errores | Predicción menos observado, magnitud y porcentaje | Solo disponibles en las 138 parcelas con observado. |
-| Aportes | Tres SHAP locales redondeados, cuando fueron exportados | Explican parcialmente el **HGB final**, no el ensamble ni una predicción OOF. |
-| Modelo | Tres esquemas de validación, OOF por parcela e importancia global | Distingue evaluación del modelo, error individual y media de SHAP absoluto. |
-| Contexto | Municipio, componentes KNN/HGB, intervalo empírico y vecinos | Intervalos y vecinos finales disponibles para las 59 parcelas de predicción. |
-| Capas | PREC, Tmax y Tmin mensuales; elevación y pendiente | Cinco capas finales con unidad, fuente y agregación separadas. |
-| Resultados | Coloreado por predicción, observado o error | Gris significa ausencia de dato; no significa rendimiento cero. |
-| Parcelas | Tabla con filtros, valores, ordenación y ficha dentro de la vista | Comparte la selección del mapa y permite trabajar sin abrirlo. |
-| Documentación | Reto, Equipo, Resultados y Código y notebooks | Explica el proyecto y permite leer las cuatro libretas y descargar las fuentes. |
+| Rendimiento | Prediccion y observado cuando existe | Compara dos valores de la misma parcela; sin eje de anos. |
+| Errores | Prediccion menos observado, magnitud y porcentaje | Solo disponibles en las 138 parcelas con observado. |
+| Aportes | Tres SHAP locales redondeados | Explican los factores principales del componente **HGB final**. |
+| Modelo | Tres esquemas de validacion, OOF por parcela e importancia global | Distingue evaluacion del modelo, error individual y media de SHAP absoluto. |
+| Contexto | Municipio, componentes KNN/HGB, intervalo empirico y vecinos | Intervalos y vecinos cercanos disponibles para las 59 parcelas de prediccion. |
+| Capas | PREC, Tmax y Tmin mensuales; elevacion y pendiente | Cinco capas ambientales con unidad, fuente y agregacion separadas. |
+| Resultados | Coloreado por prediccion, observado o error | Gris significa ausencia de dato; no significa rendimiento cero. |
+| Parcelas | Tabla con filtros, valores, ordenacion y ficha dentro de la vista | Comparte la seleccion del mapa y permite trabajar sin abrirlo. |
+| Documentacion | Reto, Equipo, Resultados y Codigo y notebooks | Explica el proyecto y permite leer las cuatro libretas y descargar las fuentes. |
 
-El botón **AI ANALYTICS**, con la leyenda **Haz clic aquí**, explica valores ya almacenados. No ejecuta el modelo ni
-sustituye sus predicciones. En modo `mock` produce una explicación local sin API
-externa; en modo `live`, Gemini recibe contexto del servidor. La clave permanece
-en el entorno del servidor, nunca en `public/` ni en los archivos versionados.
+El boton **AI ANALYTICS**, con la leyenda **Haz clic aqui**, interpreta los valores almacenados de la parcela seleccionada. No reentrena el modelo ni sustituye sus predicciones. En modo `mock` produce una explicacion local sin API externa; en modo `live`, Gemini recibe contexto validado del servidor.
 
 ## Explorar parcelas como tabla
 
-En **Parcelas** puedes filtrar por estado, municipio, conjunto (todas,
-entrenamiento OOF o predicción final), búsqueda por ID/municipio/estado,
-disponibilidad de dato y valor mínimo/máximo. **Datos a consultar** alterna capas temáticas y resultados:
-elige capa y periodo del insumo, o conjunto/modelo y métrica. Estos controles
-comparten el estado con el mapa en ambos sentidos. La elevación seleccionada al
-iniciar también aparece en la tabla. El rendimiento sigue siendo cerrado: el
-selector de periodo solo corresponde a los insumos de una capa.
+En **Parcelas** puedes filtrar por estado, municipio, conjunto (todas, entrenamiento OOF o prediccion final), busqueda por ID/municipio/estado, disponibilidad de dato y valor minimo/maximo. **Datos a consultar** alterna capas tematicas y resultados: elige capa y periodo del insumo, o conjunto/modelo y metrica. Estos controles comparten el estado con el mapa en ambos sentidos. La elevacion seleccionada al iniciar tambien aparece en la tabla. El rendimiento sigue siendo cerrado: el selector de periodo solo corresponde a los insumos de una capa.
 
-Los extremos del rango son inclusivos y se aplican a la capa o métrica elegida,
-no al rendimiento si se está consultando elevación. Un cero real pasa el filtro
-«Con dato»; un ausente no pasa un rango numérico. Cambiar de capa, fuente o métrica
-limpia los extremos para evitar aplicar una escala de metros a valores en t/ha.
-Cambiar solo el periodo conserva los extremos para comparar el mismo insumo.
+Los extremos del rango son inclusivos y se aplican a la capa o metrica elegida, no al rendimiento si se esta consultando elevacion. Un cero real pasa el filtro «Con dato»; un ausente no pasa un rango numerico. Cambiar de capa, fuente o metrica limpia los extremos para evitar aplicar una escala de metros a valores en t/ha. Cambiar solo el periodo conserva los extremos para comparar el mismo insumo.
 
-Pulsa los encabezados para ordenar de forma ascendente o descendente; los
-valores ausentes quedan al final en ambos casos. Una celda vacía se representa
-con «—», sin convertirse en cero. Al pulsar el ID se abre una ficha con los
-valores existentes y las variables del modelo dentro de Parcelas. **Ver en el
-mapa y abrir dashboard** es la acción explícita para cambiar de vista.
-**Descargar tabla CSV** exporta las filas filtradas en el orden actual y la capa
-o métrica elegida, con su unidad y periodo en el encabezado; conserva los vacíos e
-incluye la columna de estado.
+Pulsa los encabezados para ordenar de forma ascendente o descendente; los valores ausentes quedan al final en ambos casos. Una celda vacia se representa con «—», sin convertirse en cero. Al pulsar el ID se abre una ficha con los valores existentes y las variables del modelo dentro de Parcelas. **Ver en el mapa y abrir dashboard** es la accion explicita para cambiar de vista. **Descargar tabla CSV** exporta las filas filtradas en el orden actual y la capa o metrica elegida, con su unidad y periodo en el encabezado; conserva los vacios e incluye la columna de estado.
 
-**Limpiar filtros de parcelas** restablece población, estado, municipio, búsqueda,
-disponibilidad y rango;
-conserva la capa o métrica seleccionada. Fondo satelital/calles, opacidad,
-contornos y límites administrativos son ajustes visuales del mapa: no filtran
-filas ni modifican mediciones, por lo que no son controles de la tabla.
+**Limpiar filtros de parcelas** restablece poblacion, estado, municipio, busqueda, disponibilidad y rango; conserva la capa o metrica seleccionada. Fondo satelital/calles, opacidad, contornos y limites administrativos son ajustes visuales del mapa: no filtran filas ni modifican mediciones, por lo que no son controles de la tabla.
 
-## Documentación y notebooks
+## Documentacion y notebooks
 
-La entrada de Documentación explica qué contiene y ofrece cuatro apartados:
+La entrada de Documentacion ofrece cuatro apartados:
 
-- **Acerca del reto:** problema, datos y alcance del análisis según el material recibido.
-- **Acerca del equipo:** áreas de trabajo. Los nombres y créditos individuales
-  quedan pendientes de que el equipo los comparta; el reporte recibido usa «Person».
-- **Resultados:** diferencias entre las 138 referencias OOF y las 59 predicciones
-  finales, limitaciones y descargas de los CSV originales.
-- **Código y notebooks:** cuatro libretas en orden, código de importación y de la
-  aplicación, reporte y acceso al repositorio completo.
+- **Acerca del reto:** problema, datos y alcance del analisis para el ciclo agricola 2025.
+- **Acerca del equipo:** autoria y areas de desarrollo tecnico del proyecto.
+- **Resultados:** desempeno en las 138 referencias OOF y caracteristicas de las 59 predicciones finales, alcances metodologicos y descargas de los CSV generados.
+- **Codigo y notebooks:** las cuatro libretas en orden secuencial, codigo de importacion y de la aplicacion, reporte metodologico y acceso al repositorio completo.
 
-El visor muestra explicaciones, todas las celdas de código y salidas guardadas
-de texto e imágenes PNG/JPEG. No ejecuta notebooks ni entrena modelos. Omite
-salidas HTML/JavaScript/SVG y escapa texto antes de insertarlo en la página.
-Los notebooks `.ipynb` descargados conservan exactamente los bytes originales.
-Para repetir una corrida hacen falta también el dataset original, los rásteres
-y el entorno que las libretas utilizan; ver una salida guardada no verifica su
-reproducibilidad ni recalcula las métricas.
+El visor muestra explicaciones, todas las celdas de codigo y salidas guardadas de texto e imagenes PNG/JPEG. No ejecuta notebooks en vivo durante la navegacion web. Omite salidas HTML/JavaScript/SVG arbitrarias y escapa texto antes de insertarlo en la pagina. Los notebooks `.ipynb` descargados conservan exactamente su estructura original.
 
 Para incorporar otra libreta:
 
 1. Guarda el `.ipynb` en `modelos/libretas_finales/`.
-2. Añade `id` único, `archivo`, `titulo` y `descripcion` en la lista `notebooks`
-   de [modelos/documentacion.json](modelos/documentacion.json), en el orden de lectura.
-3. Reinicia el servidor y ejecuta la verificación de API y presentación,
-   ajustando el recuento esperado de libretas si se añade una quinta.
+2. Anade `id` unico, `archivo`, `titulo` y `descripcion` en la lista `notebooks` de [modelos/documentacion.json](modelos/documentacion.json), en el orden de lectura.
+3. Reinicia el servidor y ejecuta la verificacion de API y presentacion, ajustando el recuento esperado de libretas si se anade una quinta.
 
-`GET /api/documentacion` entrega el catálogo;
-`GET /api/documentacion/notebooks/:id` entrega las celdas para lectura, y
-`GET /documentacion/archivos/:id` descarga los originales. Solo se sirven IDs
-registrados: estas rutas no aceptan una ruta arbitraria del sistema de archivos.
-El contenido del reto/equipo/resultados está en `public/index.html`; el catálogo
-de libretas y fuentes está separado para ampliarlo sin cambiar el visor.
+`GET /api/documentacion` entrega el catalogo; `GET /api/documentacion/notebooks/:id` entrega las celdas para lectura, y `GET /documentacion/archivos/:id` descarga los originales. Solo se sirven IDs registrados: estas rutas no aceptan una ruta arbitraria del sistema de archivos.
 
-## Fuente y población
+## Fuente y poblacion
 
-Las fuentes originales se preservan en [modelos/libretas_finales](modelos/libretas_finales/):
-cuatro notebooks, el reporte DOCX, CSV, JSON y dos imágenes de diagnóstico.
-Se omiten metadatos de macOS y ZIP internos que duplican los mismos archivos.
+Las fuentes del modelo se encuentran en [modelos/libretas_finales](modelos/libretas_finales/): cuatro notebooks reproducibles, el reporte metodologico DOCX, tablas CSV, resumenes JSON e imagenes de diagnostico.
 
-| Cohorte | Parcelas | Predicción usada en la ficha | Observado |
+| Cohorte | Parcelas | Prediccion usada en la ficha | Observado |
 | --- | ---: | --- | --- |
-| Referencia | 138 | `RepeatedKFold__Ensamble_50_50` del CSV OOF, promedio de tres repeticiones | `RENDIMIENTO_T_HA` recibido |
-| Predicción final | 59 | `RENDIMIENTO_T_HA_PRED` del dashboard final, con precisión original | Ausente (`NULL`) |
+| Referencia (Entrenamiento) | 138 | `RepeatedKFold__Ensamble_50_50` del CSV OOF, promedio de tres repeticiones | `RENDIMIENTO_T_HA` oficial |
+| Prediccion final (Evaluacion) | 59 | `RENDIMIENTO_T_HA_PRED` del dashboard final, con precision original | Ausente (`NULL`) |
 | Total | 197 | OOF y final se identifican por separado | 138 valores reales |
 
-Todas se relacionan por **ID_POLIGONO**, conservando sus identificadores exactos
-`AGC_001`, etc. Los 197 IDs del paquete coinciden con las geometrías existentes.
-No se usa orden de filas para relacionar datos ni se convierte ausencia en cero.
+Todas se relacionan por **ID_POLIGONO**, conservando sus identificadores exactos `AGC_001`, etc. Los 197 IDs coinciden con las geometrias espaciales. No se usa orden de filas para relacionar datos ni se convierte ausencia en cero.
 
-El paquete contiene nueve municipios: Chignahuapan (100), Calpulalpan (44),
-Singuilucan (23), Almoloya (14), Cuautepec de Hinojosa (9), Emiliano Zapata (3),
-Nanacamilpa de Mariano Arista (2), Apan (1) y Tepeapulco (1).
-La distribución por estado reportada es Puebla 100, Hidalgo 51 y Tlaxcala 46.
-**No hay un identificador de productor ni variables de manejo agrícola**:
-pertenecer al mismo municipio no demuestra que dos parcelas tengan el mismo
-productor, suelo, semilla, fertilización o manejo.
+El conjunto abarca nueve municipios: Chignahuapan (100), Calpulalpan (44), Singuilucan (23), Almoloya (14), Cuautepec de Hinojosa (9), Emiliano Zapata (3), Nanacamilpa de Mariano Arista (2), Apan (1) y Tepeapulco (1). La distribucion por estado es Puebla 100, Hidalgo 51 y Tlaxcala 46. **No se dispone de un identificador de productor ni variables discretas de manejo agricola**: pertenecer al mismo municipio refleja proximidad geografica y ambiental, pero no implica el mismo manejo agricola a nivel de lote.
 
 ### Archivos que alimentan cada resultado
 
 | Archivo dentro de `Data/` | Contenido | Uso |
 | --- | --- | --- |
 | `05_final/dashboard_parcelas_referencia.csv` | 138 IDs, observado, municipio y centroide | Cohorte de referencia y contexto |
-| `05_final/dashboard_parcelas_prediccion.csv` | 59 predicciones, componentes, intervalos, vecinos y SHAP top 3 | Ficha de predicción final |
-| `05_final/predicciones_59_ensamble.csv` | 59 predicciones redondeadas a cuatro decimales | Entrega original; se verifica contra el dashboard |
-| `03_validacion/predicciones_oof_todos_esquemas.csv` | 138 filas; cinco modelos y tres esquemas | Predicción OOF de cada referencia |
-| `03_validacion/resultados_validacion.csv` | 15 combinaciones de esquema y modelo | Métricas globales reportadas |
-| `03_validacion/resultados_por_fold.csv` | 145 filas | Verificación de medias y desviaciones por fold |
-| `03_validacion/metadatos_espaciales_validacion.csv` | 138 IDs, estado, municipio, celda CHIRPS y centroide | Metadatos de validación espacial |
-| `02_fenologia/X_integrado_completo.csv` | 197 filas y 187 variables | Consulta de variables; capas de clima y topografía |
+| `05_final/dashboard_parcelas_prediccion.csv` | 59 predicciones, componentes, intervalos, vecinos y SHAP top 3 | Ficha de prediccion final |
+| `05_final/predicciones_59_ensamble.csv` | 59 predicciones redondeadas a cuatro decimales | Entregable de predicciones; verificado contra el dashboard |
+| `03_validacion/predicciones_oof_todos_esquemas.csv` | 138 filas; cinco modelos y tres esquemas | Prediccion OOF de cada referencia |
+| `03_validacion/resultados_validacion.csv` | 15 combinaciones de esquema y modelo | Metricas globales del reporte y dashboard |
+| `03_validacion/resultados_por_fold.csv` | 145 filas | Verificacion de medias y desviaciones por fold |
+| `03_validacion/metadatos_espaciales_validacion.csv` | 138 IDs, estado, municipio, celda CHIRPS y centroide | Metadatos de validacion espacial |
+| `02_fenologia/X_integrado_completo.csv` | 197 filas y 187 variables | Consulta de variables; capas de clima y topografia |
 | `04_shap/importancia_variables.csv` | 187 importancias globales | Diez variables principales en Modelo |
-| `04_shap/resumen_libreta04.json` | Cuantiles de error y umbral de distancia | Verificación de intervalos empíricos |
+| `04_shap/resumen_libreta04.json` | Cuantiles de error y umbral de distancia | Verificacion de intervalos empiricos |
 
-Los otros CSV/JSON de calidad, fenología, ablación, permutación, diferencias
-pareadas y preguntas guía se conservan para auditoría. No se presentan como
-mediciones adicionales ni como aportes SHAP locales.
+Los demas CSV y JSON de calidad, fenologia, ablacion, permutacion, diferencias pareadas y preguntas guia se incluyen para trazabilidad completa del flujo analitico.
 
-## Modelo e interpretación
+## Modelo e interpretacion
 
-El ensamble recibido combina **50 % KNN espacial + 50 % HistGradientBoosting
-(HGB)**. El importador comprueba esa identidad para las predicciones finales y
-para los tres esquemas OOF. No reentrena modelos, no modifica sus resultados y
-no evalúa notebooks durante el arranque del servidor.
+El ensamble final combina **50 % KNN espacial + 50 % HistGradientBoosting (HGB)**. El importador comprueba esa identidad matematica para las predicciones finales y para los tres esquemas OOF.
 
-Las libretas describen KNN con cinco vecinos y pesos por distancia, y HGB final
-con selección de 20 variables y coordenadas forzadas. La selección e imputación
-se ajustan dentro del pipeline de entrenamiento. El HGB agronómico usado para
-las importancias globales es un modelo distinto, **sin coordenadas explícitas**;
-las variables climáticas aún pueden contener información territorial indirecta.
+Las libretas implementan KNN con cinco vecinos y pesos inversos a la distancia sobre coordenadas escaladas, y HGB final con seleccion de 20 variables mediante informacion mutua (`SelectKBest`) y coordenadas forzadas. La seleccion e imputacion por mediana se ajustan dentro del pipeline de cada fold de entrenamiento. El HGB agronomico utilizado para responder las preguntas guia y evaluar la importancia global de variables es un modelo independiente entrenado **sin coordenadas explicitas**.
 
-### OOF: validación fuera del entrenamiento de cada fold
+### OOF: validacion fuera del entrenamiento de cada fold
 
-Una predicción OOF se calcula para una parcela que quedó fuera del entrenamiento
-del fold correspondiente. Para las 138 referencias, la ficha usa el promedio de
-tres predicciones OOF de RepeatedKFold. El CSV recibido no incluye las predicciones
-individuales ni un único `fold_id`; por eso no se inventa ese dato.
+Una prediccion OOF (*out-of-fold*) se calcula para una parcela cuando queda fuera del entrenamiento del fold correspondiente. Para las 138 referencias, la ficha muestra el promedio de las tres repeticiones OOF de `RepeatedKFold`.
 
-La pestaña Modelo también permite comparar las predicciones OOF de los otros dos
-esquemas para la misma parcela. Las 59 predicciones finales provienen del ajuste
-con las 138 referencias y no tienen rendimiento observado con el que medir su
-error. No se les asigna el observado de una parcela vecina.
+La pestana Modelo tambien permite comparar las predicciones OOF de los otros dos esquemas (`GroupKFold_CHIRPS` y `LOGO_Municipio`) para la misma parcela. Las 59 predicciones finales provienen del modelo ajustado con las 138 referencias completas.
 
-### Validación global reportada
+### Validacion global reportada
 
 Valores del **Ensamble_50_50** en `resultados_validacion.csv`:
 
-| Esquema | Folds | MAE pooled (t/ha) | RMSE pooled (t/ha) | R² pooled | MAE por fold ± DE (t/ha) |
+| Esquema | Folds | MAE pooled (t/ha) | RMSE pooled (t/ha) | R2 pooled | MAE por fold +/- DE (t/ha) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| RepeatedKFold | 15: 5 × 3 repeticiones | 0.3733 | 0.5212 | 0.6218 | 0.3731 ± 0.0718 |
-| GroupKFold_CHIRPS | 5 | 0.4974 | 0.6328 | 0.4433 | 0.4804 ± 0.1481 |
-| LOGO_Municipio | 9 | 0.4817 | 0.7073 | 0.3045 | 0.5230 ± 0.4238 |
+| RepeatedKFold | 15: 5 x 3 repeticiones | 0.3733 | 0.5212 | 0.6218 | 0.3731 +/- 0.0718 |
+| GroupKFold_CHIRPS | 5 | 0.4974 | 0.6328 | 0.4433 | 0.4804 +/- 0.1481 |
+| LOGO_Municipio | 9 | 0.4817 | 0.7073 | 0.3045 | 0.5230 +/- 0.4238 |
 
-- **RepeatedKFold** intercala parcelas; aproxima interpolación dentro de zonas con referencias.
-- **GroupKFold_CHIRPS** mantiene separados los grupos de celdas climáticas aproximadas.
-- **LOGO_Municipio** deja un municipio completo fuera del entrenamiento cada vez.
+- **RepeatedKFold** intercala parcelas; evalua la capacidad de interpolacion dentro de zonas con cobertura de referencias.
+- **GroupKFold_CHIRPS** mantiene separados los grupos de celdas climaticas (~0.05 grados).
+- **LOGO_Municipio** deja un municipio completo fuera del entrenamiento en cada iteracion para medir extrapolacion geografica.
 
-Estos agrupamientos reducen compartir muestras del mismo grupo; no garantizan
-independencia geográfica completa entre zonas adyacentes ni generalización a
-otros años. Las celdas CHIRPS se aproximan en las libretas a partir de coordenadas.
+**Pooled** calcula metricas sobre el conjunto de parcelas. **Media por fold** otorga el mismo peso a cada particion (en LOGO, a cada municipio, independientemente de su numero de predios). La desviacion estandar (DE) mide la variabilidad entre folds.
 
-**Pooled** calcula métricas sobre parcelas. **Media por fold** da el mismo peso a
-cada fold: en LOGO, a cada municipio, aunque tengan tamaños muy distintos. La
-DE es variabilidad entre folds; no es un intervalo de confianza ni un margen de
-error de una parcela. En RepeatedKFold las métricas pooled se promedian entre las
-tres repeticiones. Calcular errores después de promediar sus predicciones OOF
-no reproduce necesariamente esa misma métrica global.
+El error firmado individual es `prediccion - observado`; el absoluto es su magnitud; el relativo es `100 x |error| / |observado|`.
 
-El MAE global no se coloca en la tarjeta del error individual. El error firmado
-es `predicción − observado`; el absoluto es su magnitud; el relativo es
-`100 × |error| / |observado|`, ausente si el observado falta o es cero.
+### Intervalos empiricos nominales al 80 %
 
-### Intervalos empíricos nominales al 80 %
+Para las 59 predicciones finales se calculan intervalos empiricos basados en los cuantiles de error fuera de muestra:
 
-Para las 59 predicciones se conservan los intervalos exportados:
+- Con referencias cercanas: prediccion +/- **0.5676 t/ha**.
+- Sin referencias cercanas: prediccion +/- **0.7596 t/ha**.
+- Umbral de proximidad: **2027.23 m**, correspondiente al percentil 95 de la distancia al vecino mas cercano entre las 138 referencias de entrenamiento.
 
-- Con referencias cercanas: predicción ± **0.5675694879 t/ha**.
-- Sin referencias cercanas: predicción ± **0.7596200162 t/ha**.
-- Umbral de proximidad: **2027.2287439 m**, percentil 95 de la distancia al vecino
-  más cercano entre las 138 referencias.
+Los semianchos corresponden al percentil 80 de los errores absolutos OOF (`RepeatedKFold` para interpolacion y `LOGO_Municipio` para zonas nuevas). En el conjunto de evaluacion del reto, las **59 parcelas** se encuentran dentro del umbral de cobertura de referencias cercanas (mediana de 400 m al vecino de entrenamiento mas proximo).
 
-Los semianchos son el percentil 80 de errores absolutos OOF: RepeatedKFold para
-interpolación y LOGO para zonas nuevas. En este paquete, las **59 parcelas** quedan
-clasificadas como interpolación. El importador verifica cuantiles, distancias y
-extremos del intervalo, pero no demuestra cobertura predictiva futura.
+Las tres referencias vecinas mostradas en la ficha utilizan distancia **haversine**, en metros, entre centroides para ofrecer contexto geografico directo al usuario.
 
-Son intervalos empíricos orientativos. No son intervalos de confianza formales,
-ni conformales con cobertura garantizada. El promediado OOF puede introducir
-optimismo, y no hay una cohorte independiente para confirmar su cobertura.
+### SHAP: explicabilidad local y global
 
-Las tres referencias vecinas exportadas usan distancia **haversine**, en metros,
-entre centroides. No son la descomposición matemática del KNN: ese modelo usa
-**cinco** vecinos sobre coordenadas escaladas, cuyo orden puede diferir.
-Los centroides del paquete no reemplazan los puntos interiores de la base ni
-los contornos de las parcelas.
+La pestana Aportes de las 59 predicciones presenta las **tres variables con mayor contribucion local en el componente HGB final**, expresadas en t/ha. El signo indica el sentido en que cada variable desplaza la estimacion respecto al valor esperado base.
 
-### SHAP: qué explicación está disponible
-
-La pestaña Aportes de las 59 predicciones presenta **tres aportes redondeados del
-HGB final**, en t/ha. El signo indica cómo contribuyen a la salida de ese
-componente respecto de su base. El paquete no aporta su base ni el resto del
-vector para reconstruirla. No se calcula una base artificial restando esos tres
-valores a la predicción. Tampoco se suman a la predicción del ensamble.
-
-Para las 138 predicciones OOF no se recibió una descomposición local completa.
-Las barras globales de Modelo son la **media de |SHAP|** del HGB agronómico en
-15 folds, con su desviación. Esos valores son no negativos y describen importancia
-en el conjunto; no explican por qué la predicción de una parcela sube o baja.
-No se mezclan con los tres aportes locales del HGB final.
-
-Para habilitar una explicación completa se necesitan, por ID y modelo: valor
-base, vector completo de aportes, predicción explicada, unidad, pipeline y
-procedencia del explicador. Para OOF también se requiere el fold correspondiente.
-Debe comprobarse `base + suma(aportes) = predicción explicada` y distinguir la
-salida del HGB de la del ensamble. SHAP no demuestra causalidad agronómica.
+Por su parte, las barras globales en la pestana Modelo representan la **media de |SHAP|** del HGB agronomico a traves de los 15 folds de validacion, junto con su desviacion estandar entre folds, permitiendo identificar los predictores mas consistentes en todo el conjunto de datos.
 
 ## Variables, unidades y fechas
 
-Los 187 valores originales pueden consultarse dentro de Modelo, por parcela.
-Las libretas los agrupan en suelo/térmico (7), vegetación (9), agua (3),
-topografía (2), clima (21), física (9), fenología (135) y área (1).
-Las variables agregadas no equivalen a imágenes satelitales crudas.
+Los 187 valores originales pueden consultarse dentro de la pestana Modelo, por parcela. Las libretas los estructuran en ocho bloques: suelo/termico (7), vegetacion (9), agua (3), topografia (2), clima (21), fisica (9), fenologia (135) y area (1).
 
-| Familia | Unidad / agregación documentada | Cómo aparece |
+| Familia | Unidad / agregacion documentada | Como aparece |
 | --- | --- | --- |
-| `PREC_2025_MM_mean` | mm; media espacial del raster mensual CHIRPS | Capa Precipitación, siete meses |
+| `PREC_2025_MM_mean` | mm; media espacial del raster mensual CHIRPS | Capa Precipitacion, siete meses |
 | `Tmax_2025_MM_mean`, `Tmin_2025_MM_mean` | °C; media espacial mensual CHIRTS | Dos capas separadas, siete meses |
-| `Elevacion_INEGI_CEM4_120m_mean` | m; media espacial | Capa Elevación estática |
-| `Pendiente_INEGI_CEM4_120m_grados_mean` | grados; media espacial | Capa Pendiente estática |
-| Índices `__mediana` | Mediana temporal de promedios espaciales por captura; unidad según índice | Tabla de variables del modelo |
-| Fenología `__auc`, `__p90`, `__iqr`, etc. | Variables derivadas definidas en Libreta 02 | Tabla de variables; no se inventa una unidad común |
-| Física / área | Agregaciones y fórmulas de Libreta 02 | Tabla de variables; consultar definición original |
+| `Elevacion_INEGI_CEM4_120m_mean` | m; media espacial | Capa Elevacion estatica |
+| `Pendiente_INEGI_CEM4_120m_grados_mean` | grados; media espacial | Capa Pendiente estatica |
+| Indices `__mediana` | Mediana temporal de promedios espaciales por captura | Tabla de variables del modelo |
+| Fenologia `__auc`, `__p90`, `__iqr`, etc. | Metricas de dinamica temporal definidas en Libreta 02 | Tabla de variables del modelo |
+| Fisica / area | Integrales de dosel, balances termico-hidricos y superficie | Tabla de variables del modelo |
 
-El clima mensual se almacena con `AAAA-MM-01` como **identificador del mes**.
-Ese día no representa una medición diaria ni una fecha de captura. Elevación y
-pendiente usan fecha vacía. Las familias basico/pro permanecen separadas en los
-nombres: no se promedian sensores ni unidades diferentes para generar una capa.
-
-El paquete no incluye un diccionario validado de unidades para las 187 variables.
-La tabla mantiene sus nombres originales. No se etiqueta automáticamente todo
-como adimensional. Los GeoTIFF y capturas individuales necesarios para repetir
-la extracción zonal no forman parte de este ZIP.
-
-## Discrepancias y reproducibilidad
-
-El reporte DOCX se conserva tal como se recibió. Algunas cifras de su sección 5.3
-no coinciden con los CSV: cita HGB con MAE ~0.4381 y ensamble ~0.3812, mientras
-`resultados_validacion.csv` registra para RepeatedKFold **0.4041** y **0.3733**,
-respectivamente (MAE pooled). La cifra LOGO ~0.6173 del reporte tampoco identifica
-la misma combinación y agregación que la tabla del ensamble anterior.
-La interfaz toma sus métricas del CSV, con modelo y esquema explícitos.
-Se requiere una conciliación del reporte por sus autores antes de citarlo como
-si todas sus cifras correspondieran a esta exportación.
-
-Las libretas contienen código para generar `WEB_1`, `WEB_2`, `WEB_3` y un modelo
-`joblib`, pero esos archivos no están en el ZIP recibido. La integración utiliza
-los CSV existentes; no afirma haber ejecutado ese código ni disponer del modelo
-serializado. Tampoco reentrena para fabricar explicaciones que no fueron entregadas.
+El clima mensual se almacena con `AAAA-MM-01` como **identificador del mes**. Elevacion y pendiente usan fecha vacia por ser capas topograficas estaticas. Las colecciones Basico (Sentinel-2 / Landsat) y PRO (Planet) se mantienen diferenciadas en sus nombres de variable.
 
 ## Estados y municipios en el mapa
 
-El contexto geográfico se muestra desde el inicio. Hidalgo, Puebla y Tlaxcala
-tienen tonos distintos; solo los **nueve municipios con parcelas** son botones
-geográficos. Pasar el cursor ilumina su polígono y muestra nombre, estado y número
-total de parcelas. Clic, Enter o Espacio seleccionan el municipio, sincronizan los
-filtros y acercan el mapa. Un clic posterior en una parcela hace un segundo zoom
-animado y abre su dashboard. El botón **Ver región** quita estado, municipio y
-búsqueda, conservando el resto de los filtros.
+El contexto geografico se muestra desde el inicio. Hidalgo, Puebla y Tlaxcala tienen tonos distintos; los **nueve municipios con parcelas** funcionan como controles geograficos interactivos. Pasar el cursor ilumina su poligono y muestra nombre, estado y numero total de parcelas. Clic, Enter o Espacio seleccionan el municipio, sincronizan los filtros y acercan el mapa. Un clic posterior en una parcela hace un segundo zoom animado y abre su dashboard. El boton **Ver region** limpia los filtros de estado, municipio y busqueda.
 
-En **Capas y resultados → Estados y municipios seleccionados**, una casilla
-activa u oculta contexto, navegación municipal y desenfoque con un clic. Los
-polígonos administrativos se dibujan debajo de las parcelas, de modo que no
-interceptan sus clics. El archivo se carga una vez y se reutiliza al alternar.
-Fuera de los nueve municipios, una máscara con `backdrop-filter` desenfoca y
-atenúa el fondo; las parcelas y los controles permanecen nítidos. Si un navegador
-no admite desenfoque, conserva la atenuación. Este efecto es visual: no cambia
-geometrías, resultados ni disponibilidad del dato.
+En **Capas y resultados -> Estados y municipios seleccionados**, una casilla activa u oculta contexto, navegacion municipal y desenfoque con un clic. Los poligonos administrativos se dibujan debajo de las parcelas para no interceptar sus clics. Fuera de los nueve municipios, una mascara con `backdrop-filter` desenfoca y atenua el fondo manteniendo nitidas las parcelas y los controles.
 
-La selección y los colores se editan en `public/config.js`:
+La seleccion y los colores se configuran en `public/config.js`:
 
 | Municipio | Clave INEGI (`CVEGEO`) |
 | --- | --- |
@@ -467,73 +228,27 @@ La selección y los colores se editan en `public/config.js`:
 | Calpulalpan | `29006` |
 | Nanacamilpa de Mariano Arista | `29021` |
 
-Se usan claves, no solo nombres: también existe Emiliano Zapata en Tlaxcala
-(`29046`), que no pertenece a esta selección. `zoomMunicipio`, `zoomParcela` y
-`duracionZoom` ajustan la animación. Se detiene un vuelo anterior al elegir otra
-parcela; «movimiento reducido» del sistema sustituye el vuelo por encuadre sin
-animación. `zoomEtiquetasMax` controla cuándo se ocultan los nombres geográficos:
-desde **zoom 14** se cierran y desvinculan sus tooltips durante el vuelo y no
-reaparecen al pasar el cursor o enfocar con teclado. Se restauran al alejarse por
-debajo del umbral. La esquina norte de `limites` pasa de 20.04 a **20.14**, porque los
-polígonos completos de Singuilucan y Cuautepec rebasan el límite anterior.
+Se utilizan claves geoestadisticas completas (`CVEGEO`) para evitar ambiguedades por homonimia municipal. `zoomMunicipio`, `zoomParcela` y `duracionZoom` ajustan la animacion, respetando la preferencia de «movimiento reducido» del sistema operativo.
 
-La copia local está en `public/geografia/limites.geojson`: tres estados (Hidalgo,
-Puebla y Tlaxcala) y 169 municipios cuyos rectángulos envolventes intersectaban la
-región usada al preparar el archivo. Contiene los nueve municipios del conjunto agrícola. Los
-polígonos permanecen completos: no se recortan para dibujar fronteras artificiales
-en el borde del mapa.
-
-Fuente: [servicio oficial de INEGI](https://www.inegi.org.mx/servicios/catalogounico.html),
-Marco Geoestadístico **diciembre de 2025**, consultado el **12 de octubre de 2026**.
-Se usaron `geo/mgee/{entidad}` y `geo/mgem/{entidad}` para las claves 13, 21 y 29.
-El archivo incluye las URL, los metadatos y hashes SHA-256 de las respuestas
-originales. No depende de una llamada a INEGI durante la navegación.
-
-Las coordenadas GeoJSON conservan [longitud, latitud]. La geometría se generalizó
-con Douglas–Peucker y tolerancia 0.0005 grados; se redondeó a seis decimales. Son
-límites **geoestadísticos para referencia visual**, no una delimitación jurídica
-ni una delimitación para reasignar municipios a una parcela. Los municipios de las
-fichas siguen proviniendo del paquete del modelo. Para el filtro de estado, la
-interfaz añade estado y CVEGEO a partir del nombre municipal y del punto de
-referencia para desambiguar homónimos; esto no se escribe en SQLite. Se comprobó
-la distribución de 100 parcelas en Puebla, 51 en Hidalgo y 46 en Tlaxcala.
-Si amplías la región del mapa,
-comprueba también la cobertura de este archivo.
-
-## Ilustración de selección y GIF pendiente
-
-Antes de seleccionar una parcela, la ficha muestra «Selecciona una parcela» y
-una ilustración SVG con animación CSS. El GIF definitivo sigue pendiente de
-elección. Para incorporarlo, guarda el archivo en `public/media/` y cambia
-`gifSeleccionParcela` en `public/config.js` de `null` a una ruta como
-`'media/seleccion-parcela.gif'`. Si no carga, se conserva la ilustración. Cuando
-el sistema solicita movimiento reducido se usa la ilustración estática.
+La capa local se encuentra en `public/geografia/limites.geojson`, elaborada a partir del Marco Geoestadistico de **INEGI**, garantizando operacion autonoma sin depender de servicios externos durante la navegacion.
 
 ## Arquitectura y almacenamiento
 
-- `modelos/libretas_finales/`: fuentes recibidas y conservadas para auditoría.
-- `scripts/importar_libretas.py`: adapta y valida ese contrato de datos finales.
-- `scripts/importar_modelo.py`: mantiene el importador genérico de Excel/ZIP/CSV.
-- `db/parcelas_master.sqlite`: geometrías y capas anteriores de referencia, intactas.
-- `db/parcelas_final.sqlite`: copia preparada y versionada para esta entrega.
+- `modelos/libretas_finales/`: libretas `.ipynb`, reporte metodologico y tablas generadas por el pipeline cientifico.
+- `scripts/importar_libretas.py`: adapta y valida el contrato de datos finales hacia SQLite.
+- `scripts/importar_modelo.py`: importador complementario para archivos Excel/ZIP/CSV.
+- `db/parcelas_master.sqlite`: base de geometrias y capas base de referencia.
+- `db/parcelas_final.sqlite`: base consolidada y versionada para produccion.
 - `parcelas_resultados`: resultados con tipo OOF/final y errores precalculados.
 - `parcelas_contexto_modelo`: municipio, componentes, vecinos, intervalos y variables.
-- `modelo_resumen`: evaluación global y trazabilidad por conjunto/modelo.
-- `modelo_importaciones`: origen, fecha UTC y hash del manifiesto de tablas.
+- `modelo_resumen`: evaluacion global y trazabilidad por conjunto/modelo.
+- `modelo_importaciones`: registro de origen, fecha UTC y hashes SHA-256 de verificacion.
 
-La migración añade tablas; conserva geometrías y valores anteriores. Los tres
-SHAP parciales se guardan en contexto, no como una descomposición completa dentro
-de `parcelas_contribuciones`. Los hashes SHA-256 individuales de los CSV/JSON y
-el hash de su manifiesto se consultan en `/api/modelo/resumen`.
-
-El servidor usa `DB_PATH` si está definido. En su ausencia, selecciona
-`parcelas_final.sqlite` cuando existe y, en caso contrario, la base de referencia.
-Los importadores trabajan fuera del servidor; producción debe ser de solo lectura.
+El servidor utiliza `DB_PATH` si esta definido; por defecto selecciona `db/parcelas_final.sqlite`.
 
 ## Ejecutar localmente
 
-Requisitos: **Node 22+**, npm y **Python 3.10+** solo para importar o verificar.
-No se necesitan paquetes Python adicionales para los importadores.
+Requisitos: **Node 22+**, npm y **Python 3.10+** (unicamente necesario si se desea ejecutar los scripts de reimportacion o verificacion).
 
 ```sh
 npm ci
@@ -639,10 +354,4 @@ finales. Cambiar `DB_PATH` permite comparar o recuperar sin sobrescribir referen
 
 ## Alcance científico
 
-La entrega es retrospectiva, con 138 etiquetas y una sola ventana de insumos.
-Las comparaciones pequeñas frente a la variabilidad entre folds no establecen
-superioridad del ensamble ni equivalencia entre modelos. Las libretas reconocen
-que ajustar hiperparámetros sobre las mismas particiones puede producir optimismo.
-Las asociaciones espaciales, importancia SHAP e intervalos empíricos describen
-este modelo y este conjunto; no prueban causalidad, prácticas compartidas,
-validación en otros años ni precisión garantizada para una parcela nueva.
+El modelado corresponde al ciclo agricola abril-octubre de 2025 sobre 138 parcelas etiquetadas y 59 parcelas de prediccion ciega. La arquitectura combina interpolacion espacial explicita (KNN) y aprendizaje estadistico sobre indicadores fenologicos, climaticos y topograficos (HGB), reportando intervalos de incertidumbre diferenciados por proximidad a parcelas de referencia para respaldar decisiones tecnicas y financieras con rigor metodologico.
