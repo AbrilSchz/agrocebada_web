@@ -1,0 +1,8 @@
+{
+  "version": "3.0-validacion-y-ablacion",
+  "semilla_global": 999,
+  "semilla_hgb_final": 2026,
+  "tolerancia_decision_t_ha": 0.02,
+  "cumple_regla_ensamble": true,
+  "modelo_seleccionado": "Ensamble_50_50"
+}

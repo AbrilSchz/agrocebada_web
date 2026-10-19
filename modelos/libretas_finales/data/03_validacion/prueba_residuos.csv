@@ -1,0 +1,5 @@
+﻿variables,n_vars,modelo,R2_residuos
+Satelite (indices + fenologia + fisica del dosel),157,ridge,-0.02381865295052288
+Satelite (indices + fenologia + fisica del dosel),157,hgb,-0.1753435492986941
+Satelite + clima + topografia,186,ridge,-0.01638428503969247
+Satelite + clima + topografia,186,hgb,-0.16558535524339382
