@@ -30,7 +30,6 @@
   const descriptions={seleccionar_parcela:'Selecciona una parcela por ID y acerca el mapa. Quita filtros que la oculten.',mostrar_capa:'Muestra una capa temática y opcionalmente una fecha disponible del insumo.',mostrar_resultados:'Colorea parcelas por una métrica almacenada. Los errores y observado solo tienen datos en referencias; no cambia el conjunto filtrado.',cambiar_vista:'Abre mapa, tabla de parcelas o documentación.',filtrar_parcelas:'Modifica solo los filtros indicados; vacío borra un filtro y null quita un límite numérico. Conjunto prediccion corresponde al botón Parcelas de validación. Los límites se aplican al valor de la capa o resultado actual.',limpiar_filtros:'Quita todos los filtros compartidos entre mapa y tabla.',vista_general:'Vuelve a la vista regional y limpia selección y filtros geográficos.',limites_geograficos:'Muestra u oculta estados y municipios.'};
   const enums={metric:metrics,view:['mapa','tabla','documentacion'],optionalCohort:['','referencia','prediccion'],optionalAvailability:['','present','missing']};
   
-  // CORRECCIÓN AQUÍ: Eliminado 'nullable: true' y omitido 'parameters' si está vacío
   const functions=Object.entries(specs).map(([name,spec])=>{
     const fn = { name, description: descriptions[name] };
     if (Object.keys(spec).length > 0) {
@@ -38,7 +37,8 @@
         key,
         {
           type: type==='boolean' ? 'BOOLEAN' : type==='optionalNumber' ? 'NUMBER' : 'STRING',
-          ...(enums[type] ? {enum:enums[type]} : {})
+          // CORRECCIÓN AQUÍ: Filtramos los strings vacíos para que Gemini no falle
+          ...(enums[type] ? {enum:enums[type].filter(e => e !== '')} : {})
         }
       ]));
       fn.parameters = { type: 'OBJECT', properties };
