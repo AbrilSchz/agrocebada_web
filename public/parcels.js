@@ -3,11 +3,16 @@
   const normalize = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const numeric = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function filter(features, {predictionOnly = false, municipality = '', query = ''} = {}) {
+  function filter(features, {predictionOnly = false, cohort:population='', state='',municipality='',query='',availability='',minimum='',maximum='',values={}} = {}) {
     const search = normalize(query.trim());
-    return features.filter(f => (!predictionOnly || f.properties.cohorte === 'prediccion') &&
+    const selectedCohort=predictionOnly ? 'prediccion' : population;
+    return features.filter(f => (!selectedCohort || f.properties.cohorte === selectedCohort) &&
+      (!state || f.properties.estado===state) &&
       (!municipality || f.properties.municipio === municipality) &&
-      (!search || normalize(`${f.id} ${f.properties.municipio ?? ''}`).includes(search)));
+      (!search || normalize(`${f.id} ${f.properties.municipio ?? ''} ${f.properties.estado ?? ''}`).includes(search)) &&
+      (!availability || (availability==='present' ? numeric(values[f.id]) : !numeric(values[f.id]))) &&
+      (!numeric(minimum) || (numeric(values[f.id]) && Number(values[f.id])>=Number(minimum))) &&
+      (!numeric(maximum) || (numeric(values[f.id]) && Number(values[f.id])<=Number(maximum))));
   }
   function sort(features, {key = 'id', direction = 'asc', values = {}} = {}) {
     const sign = direction === 'desc' ? -1 : 1;
@@ -31,8 +36,8 @@
       const text = typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? "'" + value : String(value ?? '');
       return '"' + text.replace(/"/g, '""') + '"';
     };
-    return [['Parcela', 'Municipio', 'Conjunto', valueLabel], ...features.map(f =>
-      [f.id, f.properties.municipio ?? '', cohort(f), numeric(values[f.id]) ? Number(values[f.id]) : ''])]
+    return [['Parcela', 'Estado', 'Municipio', 'Conjunto', valueLabel], ...features.map(f =>
+      [f.id, f.properties.estado ?? '',f.properties.municipio ?? '', cohort(f), numeric(values[f.id]) ? Number(values[f.id]) : ''])]
       .map(row => row.map(cell).join(',')).join('\r\n');
   }
   function detail(data) {
