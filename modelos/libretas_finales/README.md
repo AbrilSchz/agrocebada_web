@@ -3,7 +3,7 @@
 - 01_Calidad_y_Contexto_Agronomico.ipynb
 - 02_Ingenieria_Fenologica_y_Espacial.ipynb
 - 03_Validacion_Robusta_y_Ablacion.ipynb
-- 04
+- 04_Interpretabilidad_y_Preguntas_Guia.ipynb
 
 ## DATASET
 
