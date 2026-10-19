@@ -1,0 +1,190 @@
+﻿Capa_ID,Fuente,Unidad,Agregacion,Fecha_Mes
+suelo_termico__crc__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+suelo_termico__mcrc__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+suelo_termico__ndsvi__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+suelo_termico__srndi__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+suelo_termico__ndti__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+suelo_termico__sti__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+suelo_termico__mra__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+vegetacion__basico__ndvi__mediana,Sentinel-2 / Landsat,Adimensional,Constante / Estacional,General 2025
+vegetacion__basico__evi__mediana,Sentinel-2 / Landsat,Adimensional,Constante / Estacional,General 2025
+vegetacion__basico__lai__mediana,Sentinel-2 / Landsat,Adimensional,Constante / Estacional,General 2025
+vegetacion__basico__fapar__mediana,Sentinel-2 / Landsat,Adimensional,Constante / Estacional,General 2025
+vegetacion__basico__savi__mediana,Sentinel-2 / Landsat,Adimensional,Constante / Estacional,General 2025
+vegetacion__pro__ndvi__mediana,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+vegetacion__pro__evi__mediana,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+vegetacion__pro__lai__mediana,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+vegetacion__pro__msavi__mediana,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+agua__ndwi__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+agua__dswi4__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+agua__dswi5__mediana,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+Elevacion_INEGI_CEM4_120m_mean,INEGI CEM 4.0,Metros / Grados,Constante / Estacional,General 2025
+PREC_2025_04_mean,CHIRPS,Milimetros (mm),Mensual,Abril 2025
+PREC_2025_05_mean,CHIRPS,Milimetros (mm),Mensual,Mayo 2025
+PREC_2025_06_mean,CHIRPS,Milimetros (mm),Mensual,Junio 2025
+PREC_2025_07_mean,CHIRPS,Milimetros (mm),Mensual,Julio 2025
+PREC_2025_08_mean,CHIRPS,Milimetros (mm),Mensual,Agosto 2025
+PREC_2025_09_mean,CHIRPS,Milimetros (mm),Mensual,Septiembre 2025
+PREC_2025_10_mean,CHIRPS,Milimetros (mm),Mensual,Octubre 2025
+Pendiente_INEGI_CEM4_120m_grados_mean,INEGI CEM 4.0,Metros / Grados,Constante / Estacional,General 2025
+Tmax_2025_04_mean,CHIRTS,Grados Centigrados (C),Mensual,Abril 2025
+Tmax_2025_05_mean,CHIRTS,Grados Centigrados (C),Mensual,Mayo 2025
+Tmax_2025_06_mean,CHIRTS,Grados Centigrados (C),Mensual,Junio 2025
+Tmax_2025_07_mean,CHIRTS,Grados Centigrados (C),Mensual,Julio 2025
+Tmax_2025_08_mean,CHIRTS,Grados Centigrados (C),Mensual,Agosto 2025
+Tmax_2025_09_mean,CHIRTS,Grados Centigrados (C),Mensual,Septiembre 2025
+Tmax_2025_10_mean,CHIRTS,Grados Centigrados (C),Mensual,Octubre 2025
+Tmin_2025_04_mean,CHIRTS,Grados Centigrados (C),Mensual,Abril 2025
+Tmin_2025_05_mean,CHIRTS,Grados Centigrados (C),Mensual,Mayo 2025
+Tmin_2025_06_mean,CHIRTS,Grados Centigrados (C),Mensual,Junio 2025
+Tmin_2025_07_mean,CHIRTS,Grados Centigrados (C),Mensual,Julio 2025
+Tmin_2025_08_mean,CHIRTS,Grados Centigrados (C),Mensual,Agosto 2025
+Tmin_2025_09_mean,CHIRTS,Grados Centigrados (C),Mensual,Septiembre 2025
+Tmin_2025_10_mean,CHIRTS,Grados Centigrados (C),Mensual,Octubre 2025
+fisica__prec_acum_abr_oct,CHIRPS,Milimetros (mm),Constante / Estacional,General 2025
+fisica__prec_acum_jul_sep,CHIRPS,Milimetros (mm),Constante / Estacional,General 2025
+fisica__tmax_media_abr_oct,CHIRTS,Grados Centigrados (C),Constante / Estacional,General 2025
+fisica__tmin_media_abr_oct,CHIRTS,Grados Centigrados (C),Constante / Estacional,General 2025
+fisica__amplitud_termica_abr_oct,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fisica__cociente_estres_jul_sep,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__crc__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__crc__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__crc__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__crc__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__crc__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi2__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi2__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi2__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi2__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi2__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi3__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi3__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi3__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi3__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi3__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi4__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi4__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi4__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi4__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi4__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi5__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi5__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi5__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi5__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__dswi5__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__emsi__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__emsi__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__emsi__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__emsi__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__emsi__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__enddi__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__enddi__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__enddi__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__enddi__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__enddi__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__endwi__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__endwi__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__endwi__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__endwi__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__endwi__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__evi__auc,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__evi__delta_max,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__evi__p90,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__evi__iqr,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__evi__mes_maximo,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__fapar__auc,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__fapar__delta_max,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__fapar__p90,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__fapar__iqr,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__fapar__mes_maximo,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__lai__auc,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__lai__delta_max,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__lai__p90,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__lai__iqr,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__lai__mes_maximo,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__mcrc__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__mcrc__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__mcrc__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__mcrc__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__mcrc__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__mra__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__mra__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__mra__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__mra__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__mra__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__msi__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__msi__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__msi__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__msi__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__msi__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__nddi__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__nddi__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__nddi__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__nddi__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__nddi__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndsvi__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndsvi__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndsvi__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndsvi__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndsvi__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndti__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndti__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndti__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndti__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndti__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndvi__auc,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__ndvi__delta_max,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__ndvi__p90,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__ndvi__iqr,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__ndvi__mes_maximo,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__ndwi__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndwi__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndwi__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndwi__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__ndwi__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__savi__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__savi__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__savi__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__savi__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__savi__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__srndi__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__srndi__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__srndi__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__srndi__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__srndi__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__sti__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__sti__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__sti__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__sti__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__sti__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__vi6t__auc,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__vi6t__delta_max,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__vi6t__p90,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__vi6t__iqr,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__vi6t__mes_maximo,Calculada / Derivada,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_evi__auc,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_evi__delta_max,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_evi__p90,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_evi__iqr,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_evi__mes_maximo,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_lai__auc,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_lai__delta_max,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_lai__p90,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_lai__iqr,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_lai__mes_maximo,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_msavi__auc,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_msavi__delta_max,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_msavi__p90,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_msavi__iqr,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_msavi__mes_maximo,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_ndvi__auc,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_ndvi__delta_max,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_ndvi__p90,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_ndvi__iqr,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fenologia__PRO_ndvi__mes_maximo,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fisica__integral_dosel_fapar,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fisica__integral_dosel_ndvi,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+fisica__mes_pico_ndvi,Sentinel-2 / Planet,Adimensional,Constante / Estacional,General 2025
+AREA_HA,Shapefile,Hectareas (ha),Constante / Estacional,General 2025
+latitud,Geometria Espacial,Grados Decimales,Constante / Estacional,General 2025
+longitud,Geometria Espacial,Grados Decimales,Constante / Estacional,General 2025
