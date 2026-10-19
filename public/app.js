@@ -143,7 +143,8 @@ document.querySelectorAll('[name=base]').forEach(r => {
   };
 });
 let activeChart = 'rendimiento';
-const resultMap={enabled:false,model:null,dataset:null,metric:'prediccion',sets:[],sequence:0,catalogueSequence:0,controller:null};
+// CORRECCIÓN: Iniciamos con enabled:true y metric:'prediccion'
+const resultMap={enabled:true,model:null,dataset:null,metric:'prediccion',sets:[],sequence:0,catalogueSequence:0,controller:null};
 let resultCataloguePromise=null;
 const ramp = ['#440154', '#3b528b', '#21918c', '#5ec962', '#fde725'];
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
@@ -423,9 +424,13 @@ function irA(id) {
 }
 $('#buscar').onchange = e => irA(e.target.value.trim());
 async function init() {
+  // Aseguramos que la vista inicial sea el mapa
+  vista('mapa');
+
   // El fallo de una capa no debe impedir dibujar las parcelas.
   administrativePromise ??=json(C.limitesAdministrativos).catch(error=>{administrativePromise=null;throw error;});
   const [parcelResult,layerResult,borderResult]=await Promise.allSettled([json('/api/parcelas'),json('/api/capas'),administrativePromise]);
+  
   if (parcelResult.status === 'fulfilled') {
     const fc=borderResult.status==='fulfilled' ? window.REGIONS.enrichParcels(parcelResult.value,borderResult.value,C.estados) : parcelResult.value;allParcels=fc;drawParcels();
     const predictionCount=fc.features.filter(f=>f.properties.cohorte==='prediccion').length;
@@ -441,13 +446,21 @@ async function init() {
     if (geo.getBounds().isValid()) { map.fitBounds(geo.getBounds()); ajustarLimites(); }
     $('#map-status').hidden = true;
   } else { valueState.parcelError=parcelResult.reason.message;$('#map-status').textContent = `No se pudieron cargar las parcelas: ${parcelResult.reason.message}`;renderParcelTable(); }
+  
   if (layerResult.status === 'fulfilled') {
     capas = layerResult.value;
     const grupos = {}; capas.forEach(c => (grupos[c.grupo] ??= []).push(c));
     $('#capa').insertAdjacentHTML('beforeend', Object.entries(grupos).map(([grupo, lista]) =>
       `<optgroup label="${esc(grupo)}">${lista.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('')}</optgroup>`).join(''));
-    const initial=capas.find(c=>c.id===C.capaInicial) || capas.find(c=>c.nombre==='Elevación');
-    if(initial) {$('#capa').value=initial.id;await pintar();}
+    
+    // CORRECCIÓN: En lugar de cargar la capa inicial por defecto, cargamos el mapa de resultados (Predicción)
+    try {
+      await activateResultMap();
+    } catch (e) {
+      console.error("Error al cargar la predicción por defecto, usando capa de respaldo", e);
+      const initial=capas.find(c=>c.id===C.capaInicial) || capas.find(c=>c.nombre==='Elevación');
+      if(initial) {$('#capa').value=initial.id;await pintar();}
+    }
     renderParcelTable();
   } else { $('#layers-error').textContent = `No se pudieron cargar las capas: ${layerResult.reason.message}`; $('#layers-error').hidden = false;valueState.error=layerResult.reason.message;renderParcelTable(); }
   updateLegend();
